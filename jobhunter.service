@@ -1,0 +1,14 @@
+[Unit]
+Description=JobHunter - Personal Job Aggregator
+After=network.target
+
+[Service]
+Type=simple
+User=YOUR_USERNAME
+WorkingDirectory=/path/to/jobhunter
+ExecStart=/path/to/jobhunter/venv/bin/python app.py
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

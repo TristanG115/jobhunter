@@ -1,0 +1,1062 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JobHunter — Tristan Gooding</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+:root {
+  --bg: #0a0c10;
+  --surface: #111318;
+  --surface2: #1a1d24;
+  --border: #23262f;
+  --border2: #2e3140;
+  --accent: #6ee7b7;
+  --accent2: #818cf8;
+  --accent3: #fb923c;
+  --text: #e4e6ed;
+  --muted: #6b7080;
+  --danger: #f87171;
+  --score-high: #6ee7b7;
+  --score-mid: #fbbf24;
+  --score-low: #f87171;
+  --radius: 12px;
+  --radius-sm: 8px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* SIDEBAR */
+.sidebar {
+  position: fixed;
+  left: 0; top: 0; bottom: 0;
+  width: 220px;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  z-index: 100;
+  padding: 0;
+}
+
+.sidebar-logo {
+  padding: 28px 22px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.sidebar-logo h1 {
+  font-family: 'Syne', sans-serif;
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--accent);
+  letter-spacing: -0.5px;
+}
+
+.sidebar-logo p {
+  font-size: 11px;
+  color: var(--muted);
+  font-family: 'DM Mono', monospace;
+  margin-top: 3px;
+}
+
+.nav-section {
+  padding: 16px 12px 8px;
+  flex: 1;
+}
+
+.nav-label {
+  font-size: 10px;
+  font-family: 'DM Mono', monospace;
+  color: var(--muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0 10px;
+  margin-bottom: 6px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--muted);
+  transition: all 0.15s;
+  text-decoration: none;
+  margin-bottom: 2px;
+}
+
+.nav-item:hover { background: var(--surface2); color: var(--text); }
+.nav-item.active { background: rgba(110,231,183,0.12); color: var(--accent); }
+
+.nav-item svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+.sidebar-bottom {
+  padding: 16px 12px;
+  border-top: 1px solid var(--border);
+}
+
+.scrape-btn {
+  width: 100%;
+  background: var(--accent);
+  color: #0a0c10;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.scrape-btn:hover { background: #a7f3d0; transform: translateY(-1px); }
+.scrape-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+.scrape-btn.running { background: var(--accent3); animation: pulse 1.5s infinite; }
+
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.7; } }
+
+/* MAIN */
+.main {
+  margin-left: 220px;
+  min-height: 100vh;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  background: rgba(10,12,16,0.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 28px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  z-index: 90;
+}
+
+.search-input {
+  flex: 1;
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-sm);
+  padding: 9px 14px;
+  color: var(--text);
+  font-size: 14px;
+  font-family: 'DM Sans', sans-serif;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.search-input:focus { border-color: var(--accent2); }
+.search-input::placeholder { color: var(--muted); }
+
+.filter-select {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-sm);
+  padding: 9px 12px;
+  color: var(--text);
+  font-size: 13px;
+  font-family: 'DM Sans', sans-serif;
+  outline: none;
+  cursor: pointer;
+}
+
+.filter-select:focus { border-color: var(--accent2); }
+
+.stats-bar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.stat-pill {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  padding: 4px 10px;
+  font-size: 11px;
+}
+
+.stat-pill span { color: var(--accent); font-weight: 500; }
+
+/* PAGES */
+.page { display: none; padding: 28px; }
+.page.active { display: block; }
+
+/* JOB GRID */
+.jobs-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.jobs-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.jobs-count {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.jobs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 16px;
+}
+
+/* JOB CARD */
+.job-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  position: relative;
+  transition: all 0.2s;
+  cursor: default;
+}
+
+.job-card:hover {
+  border-color: var(--border2);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+}
+
+.job-card.saved { border-color: rgba(110,231,183,0.3); }
+
+.card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.card-company {
+  font-size: 11px;
+  font-family: 'DM Mono', monospace;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.card-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  margin-top: 3px;
+  line-height: 1.3;
+}
+
+.score-badge {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 16px;
+}
+
+.score-badge .score-label {
+  font-size: 9px;
+  font-family: 'DM Mono', monospace;
+  font-weight: 400;
+  opacity: 0.8;
+}
+
+.score-high { background: rgba(110,231,183,0.15); color: var(--score-high); border: 1px solid rgba(110,231,183,0.3); }
+.score-mid  { background: rgba(251,191,36,0.15);  color: var(--score-mid);  border: 1px solid rgba(251,191,36,0.3); }
+.score-low  { background: rgba(248,113,113,0.15); color: var(--score-low);  border: 1px solid rgba(248,113,113,0.3); }
+
+.card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.meta-tag {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-family: 'DM Mono', monospace;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 3px 8px;
+  color: var(--muted);
+}
+
+.meta-tag.remote { border-color: rgba(110,231,183,0.3); color: var(--accent); background: rgba(110,231,183,0.06); }
+.meta-tag.hybrid { border-color: rgba(129,140,248,0.3); color: var(--accent2); background: rgba(129,140,248,0.06); }
+.meta-tag.salary { border-color: rgba(251,191,36,0.3); color: var(--score-mid); background: rgba(251,191,36,0.06); }
+
+.card-reasons {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.55;
+  margin-bottom: 14px;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.card-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: 'DM Sans', sans-serif;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-decoration: none;
+  border: none;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: #0a0c10;
+}
+.btn-primary:hover { background: #a7f3d0; }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--border2);
+}
+.btn-ghost:hover { color: var(--text); border-color: var(--border2); background: var(--surface2); }
+
+.btn-ghost.active { color: var(--accent); border-color: rgba(110,231,183,0.4); }
+
+.btn-icon {
+  background: transparent;
+  color: var(--muted);
+  padding: 7px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+}
+.btn-icon:hover { color: var(--danger); background: rgba(248,113,113,0.08); }
+
+.card-date {
+  margin-left: auto;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--muted);
+}
+
+/* SCORE FILTER SLIDER */
+.score-filter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-family: 'DM Mono', monospace;
+  color: var(--muted);
+}
+
+.score-filter input[type=range] {
+  width: 90px;
+  accent-color: var(--accent);
+}
+
+/* MAP PAGE */
+#map { height: 70vh; border-radius: var(--radius); border: 1px solid var(--border); }
+
+/* SETTINGS */
+.settings-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  max-width: 800px;
+}
+
+.settings-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+}
+
+.settings-card h3 {
+  font-family: 'Syne', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  color: var(--text);
+}
+
+.form-group {
+  margin-bottom: 14px;
+}
+
+.form-label {
+  font-size: 11px;
+  font-family: 'DM Mono', monospace;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  display: block;
+  margin-bottom: 6px;
+}
+
+.form-input {
+  width: 100%;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-sm);
+  padding: 9px 12px;
+  color: var(--text);
+  font-size: 13px;
+  font-family: 'DM Mono', monospace;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.form-input:focus { border-color: var(--accent2); }
+
+/* LOG */
+.log-container {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  height: 300px;
+  overflow-y: auto;
+  color: var(--muted);
+}
+
+.log-line { padding: 2px 0; }
+.log-line.success { color: var(--accent); }
+.log-line.error { color: var(--danger); }
+
+/* SCRAPE STATUS OVERLAY */
+.scrape-overlay {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  min-width: 280px;
+  z-index: 200;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+  display: none;
+}
+
+.scrape-overlay.visible { display: block; animation: slideUp 0.2s ease; }
+@keyframes slideUp { from { transform: translateY(10px); opacity: 0; } }
+
+.scrape-overlay-title {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--accent3);
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.scrape-overlay-msg {
+  font-size: 12px;
+  font-family: 'DM Mono', monospace;
+  color: var(--muted);
+}
+
+.spinner {
+  width: 12px; height: 12px;
+  border: 2px solid rgba(251,146,60,0.3);
+  border-top-color: var(--accent3);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  display: inline-block;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* EMPTY STATE */
+.empty-state {
+  text-align: center;
+  padding: 80px 40px;
+  color: var(--muted);
+}
+
+.empty-state svg { margin-bottom: 16px; opacity: 0.3; }
+.empty-state h3 { font-family: 'Syne', sans-serif; font-size: 18px; color: var(--text); margin-bottom: 8px; }
+.empty-state p { font-size: 14px; }
+
+/* Leaflet dark overrides */
+.leaflet-tile { filter: brightness(0.6) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3) brightness(0.7); }
+.leaflet-container { background: #1a1d24; }
+
+/* MODAL */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(4px);
+  z-index: 300;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  padding: 28px;
+  max-width: 600px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+.modal-title { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 800; margin-bottom: 6px; }
+.modal-company { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--muted); margin-bottom: 16px; }
+.modal-desc { font-size: 14px; line-height: 1.6; color: var(--muted); white-space: pre-wrap; }
+.modal-close { position: absolute; top: 16px; right: 16px; background: none; border: none; color: var(--muted); cursor: pointer; font-size: 20px; }
+
+/* TOGGLE */
+.toggle-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.toggle-label { font-size: 13px; color: var(--text); }
+.toggle { position: relative; width: 36px; height: 20px; }
+.toggle input { opacity: 0; width: 0; height: 0; }
+.toggle-slider {
+  position: absolute; inset: 0;
+  background: var(--border2);
+  border-radius: 100px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.toggle-slider::before {
+  content: '';
+  position: absolute;
+  width: 14px; height: 14px;
+  background: white;
+  border-radius: 50%;
+  left: 3px; top: 3px;
+  transition: 0.2s;
+}
+.toggle input:checked + .toggle-slider { background: var(--accent); }
+.toggle input:checked + .toggle-slider::before { transform: translateX(16px); }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .sidebar { width: 60px; }
+  .sidebar-logo p, .nav-item span, .sidebar-logo h1 { display: none; }
+  .main { margin-left: 60px; }
+  .settings-grid { grid-template-columns: 1fr; }
+  .jobs-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <h1>⬡ JobHunter</h1>
+    <p>tristan@purdue</p>
+  </div>
+  <nav class="nav-section">
+    <div class="nav-label">Views</div>
+    <a class="nav-item active" onclick="showPage('jobs')" href="#">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      <span>All Jobs</span>
+    </a>
+    <a class="nav-item" onclick="showPage('saved')" href="#">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+      <span>Saved</span>
+    </a>
+    <a class="nav-item" onclick="showPage('map')" href="#">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
+      <span>Map</span>
+    </a>
+    <a class="nav-item" onclick="showPage('log')" href="#">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      <span>Log</span>
+    </a>
+    <a class="nav-item" onclick="showPage('settings')" href="#">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      <span>Settings</span>
+    </a>
+  </nav>
+  <div class="sidebar-bottom">
+    <button class="scrape-btn" id="scrapeBtn" onclick="triggerScrape()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+      Scrape Now
+    </button>
+  </div>
+</aside>
+
+<main class="main">
+  <div class="topbar">
+    <input class="search-input" type="text" placeholder="Search jobs, companies, locations..." id="searchInput" oninput="filterJobs()">
+    <select class="filter-select" id="workTypeFilter" onchange="filterJobs()">
+      <option value="">All Types</option>
+      <option value="Remote">Remote</option>
+      <option value="Hybrid">Hybrid</option>
+      <option value="Onsite">Onsite</option>
+    </select>
+    <select class="filter-select" id="sortFilter" onchange="filterJobs()">
+      <option value="match_score">Best Match</option>
+      <option value="date_found">Newest</option>
+      <option value="salary">Salary</option>
+      <option value="title">Title A-Z</option>
+    </select>
+    <div class="score-filter">
+      <span>Min</span>
+      <input type="range" min="0" max="90" step="10" value="0" id="scoreSlider" oninput="updateScoreLabel(); filterJobs()">
+      <span id="scoreLabel" style="color:var(--accent);font-weight:600">0%</span>
+    </div>
+    <div class="stats-bar">
+      <div class="stat-pill"><span id="statTotal">0</span> jobs</div>
+      <div class="stat-pill"><span id="statSaved">0</span> saved</div>
+    </div>
+  </div>
+
+  <!-- JOBS PAGE -->
+  <div class="page active" id="page-jobs">
+    <div class="jobs-header">
+      <div>
+        <div class="jobs-title">Job Listings</div>
+        <div class="jobs-count" id="jobsCount">Loading...</div>
+      </div>
+    </div>
+    <div class="jobs-grid" id="jobsGrid"></div>
+  </div>
+
+  <!-- SAVED PAGE -->
+  <div class="page" id="page-saved">
+    <div class="jobs-header">
+      <div>
+        <div class="jobs-title">Saved Jobs</div>
+        <div class="jobs-count" id="savedCount">0 saved</div>
+      </div>
+    </div>
+    <div class="jobs-grid" id="savedGrid"></div>
+  </div>
+
+  <!-- MAP PAGE -->
+  <div class="page" id="page-map">
+    <div class="jobs-header">
+      <div class="jobs-title">Job Locations</div>
+    </div>
+    <div id="map"></div>
+  </div>
+
+  <!-- LOG PAGE -->
+  <div class="page" id="page-log">
+    <div class="jobs-header">
+      <div class="jobs-title">Scrape Log</div>
+    </div>
+    <div class="log-container" id="logContainer">
+      <div class="log-line" style="color:var(--muted)">No scrapes yet. Hit "Scrape Now" to get started.</div>
+    </div>
+    <div style="margin-top:16px; font-size:12px; font-family:'DM Mono',monospace; color:var(--muted)" id="lastScrapeInfo"></div>
+  </div>
+
+  <!-- SETTINGS PAGE -->
+  <div class="page" id="page-settings">
+    <div class="jobs-header">
+      <div class="jobs-title">Settings</div>
+    </div>
+    <div class="settings-grid">
+      <div class="settings-card">
+        <h3>API Keys</h3>
+        <div class="form-group">
+          <label class="form-label">OpenAI API Key (Purdue)</label>
+          <input class="form-input" type="password" id="openai_key" placeholder="sk-...">
+        </div>
+        <div class="form-group">
+          <label class="form-label">JSearch API Key (RapidAPI)</label>
+          <input class="form-input" type="password" id="jsearch_key" placeholder="Your RapidAPI key">
+        </div>
+        <button class="btn btn-primary" onclick="saveSettings()">Save Keys</button>
+      </div>
+      <div class="settings-card">
+        <h3>Auto-Scrape</h3>
+        <div class="toggle-row">
+          <span class="toggle-label">Enable auto-scrape</span>
+          <label class="toggle"><input type="checkbox" id="auto_scrape"><span class="toggle-slider"></span></label>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Interval (hours)</label>
+          <input class="form-input" type="number" id="scrape_interval_hours" value="24" min="1" max="168">
+        </div>
+        <p style="font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:14px">
+          Auto-scrape runs in the background. For a proper cron job, add this to your crontab:<br>
+          <code style="color:var(--accent)">0 8 * * * curl -X POST http://localhost:5000/api/scrape</code>
+        </p>
+        <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
+      </div>
+      <div class="settings-card" style="grid-column: 1/-1">
+        <h3>Getting Your JSearch API Key</h3>
+        <p style="font-size:13px;color:var(--muted);line-height:1.6">
+          1. Go to <a href="https://rapidapi.com/letscrape-6bRBa3QguO5/api/jsearch" target="_blank" style="color:var(--accent2)">RapidAPI JSearch</a><br>
+          2. Sign up / log in → click "Subscribe to Test" → choose the <strong style="color:var(--text)">Free plan</strong> (200 requests/month)<br>
+          3. Copy your X-RapidAPI-Key from the header params section<br><br>
+          For Purdue's OpenAI key, visit the Purdue GenAI program portal and generate an API key there. Use it exactly like a standard OpenAI key.
+        </p>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- SCRAPE STATUS OVERLAY -->
+<div class="scrape-overlay" id="scrapeOverlay">
+  <div class="scrape-overlay-title">
+    <span class="spinner"></span>
+    Scraping in progress
+  </div>
+  <div class="scrape-overlay-msg" id="scrapeMsg">Starting...</div>
+</div>
+
+<!-- JOB DETAIL MODAL -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+  <div class="modal" id="modal">
+    <div class="modal-title" id="modalTitle"></div>
+    <div class="modal-company" id="modalCompany"></div>
+    <div id="modalMeta" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px"></div>
+    <div class="modal-desc" id="modalDesc"></div>
+    <div style="margin-top:20px;display:flex;gap:8px">
+      <a class="btn btn-primary" id="modalApply" href="#" target="_blank">Apply Now ↗</a>
+      <a class="btn btn-ghost" id="modalCompanyLink" href="#" target="_blank">Company Site</a>
+      <button class="btn btn-ghost" onclick="closeModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let allJobs = [];
+let map = null;
+let mapMarkers = [];
+let currentPage = 'jobs';
+
+// ─── Navigation ──────────────────────────────────────────────
+function showPage(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  event.currentTarget.classList.add('active');
+  currentPage = page;
+  if (page === 'map') initMap();
+  if (page === 'saved') renderSaved();
+  if (page === 'log') loadLog();
+  if (page === 'settings') loadSettings();
+}
+
+// ─── Jobs ─────────────────────────────────────────────────────
+async function loadJobs() {
+  const params = buildParams();
+  const resp = await fetch('/api/jobs?' + params);
+  allJobs = await resp.json();
+  renderJobs(allJobs, 'jobsGrid');
+  document.getElementById('jobsCount').textContent = `${allJobs.length} listings`;
+  loadStats();
+}
+
+function buildParams() {
+  const search = document.getElementById('searchInput').value;
+  const workType = document.getElementById('workTypeFilter').value;
+  const sort = document.getElementById('sortFilter').value;
+  const minScore = document.getElementById('scoreSlider').value;
+  const p = new URLSearchParams();
+  if (search) p.set('search', search);
+  if (workType) p.set('work_type', workType);
+  p.set('sort', sort);
+  p.set('min_score', minScore);
+  return p.toString();
+}
+
+function filterJobs() { loadJobs(); }
+
+function updateScoreLabel() {
+  document.getElementById('scoreLabel').textContent = document.getElementById('scoreSlider').value + '%';
+}
+
+function renderJobs(jobs, gridId) {
+  const grid = document.getElementById(gridId);
+  if (!jobs.length) {
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <h3>No jobs found</h3>
+      <p>Try adjusting your filters or run a new scrape.</p>
+    </div>`;
+    return;
+  }
+  grid.innerHTML = jobs.map(job => jobCard(job)).join('');
+}
+
+function jobCard(job) {
+  const score = job.match_score || 0;
+  const scoreClass = score >= 70 ? 'score-high' : score >= 45 ? 'score-mid' : 'score-low';
+  const wtClass = job.work_type === 'Remote' ? 'remote' : job.work_type === 'Hybrid' ? 'hybrid' : '';
+
+  const dateStr = job.date_found ? new Date(job.date_found).toLocaleDateString('en-US', {month:'short', day:'numeric'}) : '';
+
+  return `<div class="job-card ${job.saved ? 'saved' : ''}" id="card-${job.id}">
+  <div class="card-top">
+    <div>
+      <div class="card-company">${esc(job.company)}</div>
+      <div class="card-title">${esc(job.title)}</div>
+    </div>
+    <div class="score-badge ${scoreClass}">
+      ${score}<div class="score-label">match</div>
+    </div>
+  </div>
+  <div class="card-meta">
+    ${job.work_type ? `<span class="meta-tag ${wtClass}">⬡ ${job.work_type}</span>` : ''}
+    ${job.location ? `<span class="meta-tag">📍 ${esc(job.location)}</span>` : ''}
+    ${job.salary_display ? `<span class="meta-tag salary">💰 ${esc(job.salary_display)}</span>` : ''}
+    ${job.source ? `<span class="meta-tag">${esc(job.source)}</span>` : ''}
+  </div>
+  ${job.match_reasons ? `<div class="card-reasons">${esc(job.match_reasons)}</div>` : ''}
+  <div class="card-actions">
+    ${job.apply_url ? `<a class="btn btn-primary" href="${esc(job.apply_url)}" target="_blank">Apply ↗</a>` : ''}
+    <button class="btn btn-ghost" onclick="showDetail(${job.id})">Details</button>
+    <button class="btn btn-ghost ${job.saved ? 'active' : ''}" onclick="toggleSave(${job.id}, this)" title="Save">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="${job.saved ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+    </button>
+    <button class="btn btn-icon" onclick="hideJob(${job.id})" title="Hide">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+    </button>
+    <span class="card-date">${dateStr}</span>
+  </div>
+</div>`;
+}
+
+function esc(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+async function toggleSave(id, btn) {
+  const job = allJobs.find(j => j.id === id);
+  if (!job) return;
+  const newSaved = !job.saved;
+  await fetch(`/api/jobs/${id}/save`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({saved: newSaved})});
+  job.saved = newSaved ? 1 : 0;
+  // Re-render card
+  const card = document.getElementById('card-' + id);
+  if (card) card.outerHTML = jobCard(job);
+  loadStats();
+}
+
+async function hideJob(id) {
+  await fetch(`/api/jobs/${id}/hide`, {method:'POST'});
+  document.getElementById('card-' + id)?.remove();
+  allJobs = allJobs.filter(j => j.id !== id);
+  document.getElementById('jobsCount').textContent = `${allJobs.length} listings`;
+}
+
+function showDetail(id) {
+  const job = allJobs.find(j => j.id === id) || savedJobs?.find(j => j.id === id);
+  if (!job) return;
+  document.getElementById('modalTitle').textContent = job.title;
+  document.getElementById('modalCompany').textContent = job.company + (job.location ? ' · ' + job.location : '');
+  document.getElementById('modalMeta').innerHTML = `
+    ${job.work_type ? `<span class="meta-tag ${job.work_type==='Remote'?'remote':job.work_type==='Hybrid'?'hybrid':''}">${job.work_type}</span>` : ''}
+    ${job.salary_display ? `<span class="meta-tag salary">${job.salary_display}</span>` : ''}
+    <span class="meta-tag score-${job.match_score>=70?'high':job.match_score>=45?'mid':'low'}" style="font-weight:700">Match: ${job.match_score}%</span>
+  `;
+  document.getElementById('modalDesc').textContent = job.description || 'No description available.';
+  document.getElementById('modalApply').href = job.apply_url || '#';
+  document.getElementById('modalCompanyLink').href = job.company_url || job.apply_url || '#';
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+function closeModal(e) {
+  if (!e || e.target === document.getElementById('modalOverlay')) {
+    document.getElementById('modalOverlay').classList.remove('open');
+  }
+}
+
+// ─── Saved ────────────────────────────────────────────────────
+let savedJobs = [];
+async function renderSaved() {
+  const resp = await fetch('/api/jobs?saved=1&sort=match_score');
+  savedJobs = await resp.json();
+  renderJobs(savedJobs, 'savedGrid');
+  document.getElementById('savedCount').textContent = `${savedJobs.length} saved`;
+}
+
+// ─── Stats ────────────────────────────────────────────────────
+async function loadStats() {
+  const resp = await fetch('/api/stats');
+  const stats = await resp.json();
+  document.getElementById('statTotal').textContent = stats.total;
+  document.getElementById('statSaved').textContent = stats.saved;
+  if (stats.last_scrape) {
+    document.getElementById('lastScrapeInfo').textContent = 'Last scrape: ' + new Date(stats.last_scrape).toLocaleString();
+  }
+}
+
+// ─── MAP ──────────────────────────────────────────────────────
+async function initMap() {
+  if (!map) {
+    map = L.map('map').setView([39.9, -86.2], 7); // Center on Indiana
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap'
+    }).addTo(map);
+  }
+  // Clear old markers
+  mapMarkers.forEach(m => map.removeLayer(m));
+  mapMarkers = [];
+
+  const resp = await fetch('/api/jobs?min_score=0');
+  const jobs = await resp.json();
+
+  jobs.forEach(job => {
+    if (!job.lat || !job.lng) return;
+    const score = job.match_score || 0;
+    const color = score >= 70 ? '#6ee7b7' : score >= 45 ? '#fbbf24' : '#f87171';
+    const marker = L.circleMarker([job.lat, job.lng], {
+      radius: 8,
+      fillColor: color,
+      color: '#0a0c10',
+      weight: 2,
+      opacity: 1,
+      fillOpacity: 0.85
+    }).addTo(map);
+    marker.bindPopup(`
+      <b style="font-family:sans-serif">${job.title}</b><br>
+      ${job.company}<br>
+      <small>${job.location}</small><br>
+      <b style="color:${color}">Match: ${score}%</b><br>
+      ${job.salary_display ? `💰 ${job.salary_display}<br>` : ''}
+      ${job.apply_url ? `<a href="${job.apply_url}" target="_blank">Apply ↗</a>` : ''}
+    `);
+    mapMarkers.push(marker);
+  });
+}
+
+// ─── Scrape ───────────────────────────────────────────────────
+async function triggerScrape() {
+  const btn = document.getElementById('scrapeBtn');
+  btn.disabled = true;
+  const resp = await fetch('/api/scrape', {method:'POST'});
+  const data = await resp.json();
+  if (!data.ok) {
+    alert(data.msg);
+    btn.disabled = false;
+    return;
+  }
+  btn.classList.add('running');
+  btn.innerHTML = `<span class="spinner"></span> Running...`;
+  document.getElementById('scrapeOverlay').classList.add('visible');
+  pollScrape();
+}
+
+let pollTimer = null;
+function pollScrape() {
+  if (pollTimer) clearTimeout(pollTimer);
+  pollTimer = setTimeout(async () => {
+    const resp = await fetch('/api/scrape/status');
+    const data = await resp.json();
+    document.getElementById('scrapeMsg').textContent = data.progress || '...';
+    if (currentPage === 'log') {
+      const log = document.getElementById('logContainer');
+      log.innerHTML = data.log.map(l => `<div class="log-line">${l}</div>`).join('');
+      log.scrollTop = log.scrollHeight;
+    }
+    if (data.running) {
+      pollScrape();
+    } else {
+      const btn = document.getElementById('scrapeBtn');
+      btn.disabled = false;
+      btn.classList.remove('running');
+      btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg> Scrape Now`;
+      document.getElementById('scrapeOverlay').classList.remove('visible');
+      loadJobs();
+    }
+  }, 2000);
+}
+
+// ─── Log ──────────────────────────────────────────────────────
+async function loadLog() {
+  const resp = await fetch('/api/scrape/status');
+  const data = await resp.json();
+  if (data.log && data.log.length) {
+    document.getElementById('logContainer').innerHTML = data.log.map(l => `<div class="log-line">${l}</div>`).join('');
+  }
+  loadStats();
+}
+
+// ─── Settings ─────────────────────────────────────────────────
+async function loadSettings() {
+  const resp = await fetch('/api/settings');
+  const data = await resp.json();
+  document.getElementById('openai_key').placeholder = data.openai_key ? '(key saved — enter to update)' : 'sk-...';
+  document.getElementById('jsearch_key').placeholder = data.jsearch_key ? '(key saved — enter to update)' : 'Your RapidAPI key';
+  document.getElementById('auto_scrape').checked = data.auto_scrape === 'true';
+  document.getElementById('scrape_interval_hours').value = data.scrape_interval_hours || 24;
+}
+
+async function saveSettings() {
+  const payload = {
+    openai_key: document.getElementById('openai_key').value,
+    jsearch_key: document.getElementById('jsearch_key').value,
+    auto_scrape: document.getElementById('auto_scrape').checked ? 'true' : 'false',
+    scrape_interval_hours: document.getElementById('scrape_interval_hours').value,
+  };
+  await fetch('/api/settings', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
+  // Clear sensitive fields
+  document.getElementById('openai_key').value = '';
+  document.getElementById('jsearch_key').value = '';
+  alert('Settings saved!');
+  loadSettings();
+}
+
+// ─── Init ──────────────────────────────────────────────────────
+loadJobs();
+</script>
+</body>
+</html>
