@@ -4,7 +4,14 @@ from datetime import datetime
 import scraper
 
 app = Flask(__name__)
-app.secret_key = "jobhunter-secret-change-me-2024"
+_secret = os.environ.get("JOBHUNTER_SECRET_KEY")
+if not _secret:
+    import secrets as _secrets
+    _secret = _secrets.token_hex(32)
+    print("WARNING: JOBHUNTER_SECRET_KEY not set — generated a random key. "
+          "Sessions will be invalidated on every restart. "
+          "Set JOBHUNTER_SECRET_KEY in your environment to persist sessions.")
+app.secret_key = _secret
 DB_PATH = "data/jobs.db"
 CREDS_PATH = "credentials/sheets_credentials.json"
 os.makedirs("uploads", exist_ok=True)
@@ -67,6 +74,12 @@ def init_db():
             CREATE TABLE IF NOT EXISTS api_usage_daily (
                 day TEXT PRIMARY KEY,
                 adzuna_calls INTEGER DEFAULT 0
+            );
+            CREATE TABLE IF NOT EXISTS search_profiles (
+                user_id INTEGER PRIMARY KEY,
+                profile_json TEXT NOT NULL,
+                resume_hash TEXT,
+                generated_at TEXT DEFAULT (datetime('now'))
             );
             CREATE TABLE IF NOT EXISTS settings (
                 key TEXT PRIMARY KEY, value TEXT
@@ -172,14 +185,8 @@ def login():
             conn.execute("INSERT INTO users (username) VALUES (?)", (username,))
             conn.commit()
             user = conn.execute("SELECT * FROM users WHERE username=?", (username,)).fetchone()
-            uid = user["id"]
-            conn.executemany(
-                "INSERT INTO search_locations (user_id,city,state,label,radius_miles,active) VALUES (?,?,?,?,?,1)",
-                [(uid,"Indianapolis","IN","Indianapolis, IN",30),
-                 (uid,"West Lafayette","IN","West Lafayette, IN",25),
-                 (uid,"Plainfield","IN","Plainfield, IN",20)]
-            )
-            conn.commit()
+            # New users start with no locations — they add their own in Settings.
+            # This makes the app work for anyone, not just Indiana users.
     session["user_id"] = user["id"]
     session["username"] = user["username"]
     return jsonify({"ok": True, "username": user["username"]})
@@ -316,6 +323,95 @@ Include 10 titles, 6 Indiana/remote companies, 6 job boards (include Dice, Hands
 
 # ─── LOCATIONS ────────────────────────────────────────────────────────────────
 
+def get_search_profile(user_id: int) -> dict | None:
+    """Load cached search profile for a user, or None if not generated yet."""
+    with get_db() as conn:
+        row = conn.execute("SELECT profile_json FROM search_profiles WHERE user_id=?", (user_id,)).fetchone()
+    if row:
+        try:
+            return json.loads(row["profile_json"])
+        except Exception:
+            return None
+    return None
+
+
+def save_search_profile(user_id: int, profile: dict, resume_hash: str):
+    """Cache a generated search profile for a user."""
+    with get_db() as conn:
+        conn.execute(
+            "INSERT OR REPLACE INTO search_profiles (user_id, profile_json, resume_hash, generated_at) VALUES (?,?,?,datetime('now'))",
+            (user_id, json.dumps(profile), resume_hash)
+        )
+        conn.commit()
+
+
+def _resume_hash(resume_text: str) -> str:
+    import hashlib
+    return hashlib.sha256((resume_text or "").encode()).hexdigest()[:16]
+
+
+@app.route("/api/search_profile", methods=["GET"])
+@require_login
+def get_profile_route():
+    """Return the current user's cached search profile."""
+    user = current_user()
+    profile = get_search_profile(user["id"])
+    if not profile:
+        return jsonify({"ok": True, "profile": None, "msg": "No profile generated yet. Run Generate Profile or start a scrape."})
+    return jsonify({"ok": True, "profile": profile})
+
+
+@app.route("/api/search_profile/generate", methods=["POST"])
+@require_login
+def generate_profile_route():
+    """Generate (or regenerate) the AI search profile for this user."""
+    user = current_user()
+    if not user["resume_text"]:
+        return jsonify({"ok": False, "msg": "Upload your resume first."})
+    api_key = get_setting("purdue_api_key")
+    if not api_key:
+        return jsonify({"ok": False, "msg": "AI API key not configured."})
+
+    uid = user["id"]
+    with get_db() as conn:
+        locations = [dict(r) for r in conn.execute(
+            "SELECT * FROM search_locations WHERE user_id=? AND active=1", (uid,)).fetchall()]
+
+    def log(msg):
+        pass  # Fire-and-forget; caller gets the result directly
+
+    profile = scraper.generate_search_profile(
+        user["resume_text"],
+        user["ai_context"] or "",
+        locations,
+        api_key,
+        get_setting("purdue_api_url") or "https://genai.rcac.purdue.edu/api/chat/completions",
+        get_setting("purdue_api_model") or "gpt-oss:120b",
+        log
+    )
+    bump_usage(ai=1)
+    save_search_profile(uid, profile, _resume_hash(user["resume_text"]))
+    return jsonify({"ok": True, "profile": profile})
+
+
+@app.route("/api/search_profile", methods=["PUT"])
+@require_login
+def update_profile_route():
+    """Manually update specific fields of the search profile."""
+    user = current_user()
+    profile = get_search_profile(user["id"]) or scraper._fallback_profile()
+    updates = request.json or {}
+    allowed_keys = {
+        "muse_categories", "muse_levels", "remotive_categories",
+        "greenhouse_boards", "jsearch_queries", "usajobs_keywords",
+        "title_include_keywords", "title_exclude_extra"
+    }
+    for k, v in updates.items():
+        if k in allowed_keys:
+            profile[k] = v
+    save_search_profile(user["id"], profile, _resume_hash(user.get("resume_text") or ""))
+    return jsonify({"ok": True, "profile": profile})
+
 @app.route("/api/locations", methods=["GET"])
 @require_login
 def get_locations():
@@ -358,6 +454,101 @@ def toggle_location(loc_id):
         conn.execute("UPDATE search_locations SET active=1-active WHERE id=? AND user_id=?", (loc_id, user["id"]))
         conn.commit()
     return jsonify({"ok": True})
+
+# ─── SEARCH PROFILE (AI-generated per-user scrape configuration) ──────────────
+
+def get_search_profile(user_id: int):
+    """Load cached search profile for a user, or None if not generated yet."""
+    with get_db() as conn:
+        row = conn.execute("SELECT profile_json FROM search_profiles WHERE user_id=?", (user_id,)).fetchone()
+    if row:
+        try:
+            return json.loads(row["profile_json"])
+        except Exception:
+            return None
+    return None
+
+
+def save_search_profile(user_id: int, profile: dict, resume_hash: str):
+    """Cache a generated search profile for a user."""
+    with get_db() as conn:
+        conn.execute(
+            "INSERT OR REPLACE INTO search_profiles (user_id, profile_json, resume_hash, generated_at) "
+            "VALUES (?,?,?,datetime('now'))",
+            (user_id, json.dumps(profile), resume_hash)
+        )
+        conn.commit()
+
+
+def _resume_hash(resume_text: str) -> str:
+    import hashlib
+    return hashlib.sha256((resume_text or "").encode()).hexdigest()[:16]
+
+
+@app.route("/api/search_profile", methods=["GET"])
+@require_login
+def get_profile_route():
+    """Return the current user's cached search profile."""
+    user = current_user()
+    profile = get_search_profile(user["id"])
+    with get_db() as conn:
+        row = conn.execute("SELECT generated_at, resume_hash FROM search_profiles WHERE user_id=?",
+                           (user["id"],)).fetchone()
+    meta = dict(row) if row else {}
+    if not profile:
+        return jsonify({"ok": True, "profile": None,
+                        "msg": "No profile yet — click Generate Profile or run a scrape."})
+    return jsonify({"ok": True, "profile": profile, "meta": meta})
+
+
+@app.route("/api/search_profile/generate", methods=["POST"])
+@require_login
+def generate_profile_route():
+    """Generate (or regenerate) the AI search profile for this user."""
+    user = current_user()
+    if not user["resume_text"]:
+        return jsonify({"ok": False, "msg": "Upload your resume first."})
+    api_key = get_setting("purdue_api_key")
+    if not api_key:
+        return jsonify({"ok": False, "msg": "AI API key not configured."})
+
+    uid = user["id"]
+    with get_db() as conn:
+        locations = [dict(r) for r in conn.execute(
+            "SELECT * FROM search_locations WHERE user_id=? AND active=1", (uid,)).fetchall()]
+
+    logs = []
+    profile = scraper.generate_search_profile(
+        user["resume_text"],
+        user["ai_context"] or "",
+        locations,
+        api_key,
+        get_setting("purdue_api_url") or "https://genai.rcac.purdue.edu/api/chat/completions",
+        get_setting("purdue_api_model") or "gpt-oss:120b",
+        lambda msg: logs.append(msg)
+    )
+    bump_usage(ai=1)
+    save_search_profile(uid, profile, _resume_hash(user["resume_text"]))
+    return jsonify({"ok": True, "profile": profile, "log": logs})
+
+
+@app.route("/api/search_profile", methods=["PUT"])
+@require_login
+def update_profile_route():
+    """Manually update specific fields of the search profile (for power users)."""
+    user = current_user()
+    profile = get_search_profile(user["id"]) or scraper._fallback_profile()
+    updates = request.json or {}
+    allowed_keys = {
+        "muse_categories", "muse_levels", "remotive_categories",
+        "greenhouse_boards", "jsearch_queries", "usajobs_keywords",
+        "title_include_keywords", "title_exclude_extra"
+    }
+    for k, v in updates.items():
+        if k in allowed_keys:
+            profile[k] = v
+    save_search_profile(user["id"], profile, _resume_hash(user.get("resume_text") or ""))
+    return jsonify({"ok": True, "profile": profile})
 
 # ─── JOBS ─────────────────────────────────────────────────────────────────────
 
@@ -594,14 +785,29 @@ def trigger_scrape():
         last = conn.execute("SELECT MAX(scrape_batch_id) as m FROM jobs WHERE user_id=?", (uid,)).fetchone()
         batch_id = (last["m"] or 0) + 1
 
+    # Load or generate search profile
+    cached_profile = get_search_profile(uid)
+    resume_hash = _resume_hash(user["resume_text"])
+    # Regenerate if no profile exists, or if resume has changed since last generation
+    if not cached_profile:
+        # Will be generated at the start of run_scrape
+        cached_profile = None
+    else:
+        with get_db() as conn:
+            row = conn.execute("SELECT resume_hash FROM search_profiles WHERE user_id=?", (uid,)).fetchone()
+        if row and row["resume_hash"] != resume_hash:
+            cached_profile = None  # Resume changed — regenerate
+
     user_dict = dict(user)
     scrape_status[uid] = {"running": True, "progress": "Starting...", "log": [], "batch_id": batch_id}
     t = threading.Thread(target=run_scrape,
-        args=(uid, user_dict, usajobs_key, usajobs_email, jsearch_key, purdue_key, locations, batch_id, skip_jsearch))
+        args=(uid, user_dict, usajobs_key, usajobs_email, jsearch_key, purdue_key,
+              locations, batch_id, skip_jsearch, cached_profile))
     t.daemon = True; t.start()
     return jsonify({"ok": True})
 
-def run_scrape(uid, user, usajobs_key, usajobs_email, jsearch_key, purdue_key, locations, batch_id, skip_jsearch):
+def run_scrape(uid, user, usajobs_key, usajobs_email, jsearch_key, purdue_key,
+               locations, batch_id, skip_jsearch, search_profile=None):
     started = datetime.now().isoformat()
     jobs_found = jsearch_calls = ai_calls = 0
     source_counts = {}
@@ -611,9 +817,27 @@ def run_scrape(uid, user, usajobs_key, usajobs_email, jsearch_key, purdue_key, l
         scrape_status[uid]["log"].append(f"[{datetime.now().strftime('%H:%M:%S')}] {msg}")
 
     try:
+        # Generate/load search profile if needed
+        if search_profile is None:
+            log("Generating personalized search profile from resume...")
+            search_profile = scraper.generate_search_profile(
+                user["resume_text"],
+                user.get("ai_context") or "",
+                locations,
+                purdue_key,
+                get_setting("purdue_api_url") or "https://genai.rcac.purdue.edu/api/chat/completions",
+                get_setting("purdue_api_model") or "gpt-oss:120b",
+                log
+            )
+            bump_usage(ai=1)
+            save_search_profile(uid, search_profile, _resume_hash(user["resume_text"]))
+        else:
+            log("Using cached search profile...")
+
         log("Fetching jobs from all free sources (Muse, Remotive, Greenhouse, USAJobs, JSearch)...")
         jobs, source_counts = scraper.scrape_jobs(
-            usajobs_key, usajobs_email, jsearch_key, locations, log, skip_jsearch)
+            usajobs_key, usajobs_email, jsearch_key, locations, log,
+            skip_jsearch, search_profile=search_profile)
 
         jsearch_calls = source_counts.get("jsearch", 0)
 

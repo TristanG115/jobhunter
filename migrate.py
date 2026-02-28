@@ -14,6 +14,12 @@ def migrate():
     print("Running migrations...")
 
     migrations = [
+        """CREATE TABLE IF NOT EXISTS search_profiles (
+            user_id INTEGER PRIMARY KEY,
+            profile_json TEXT NOT NULL,
+            resume_hash TEXT,
+            generated_at TEXT DEFAULT (datetime('now'))
+        )""",
         # Core tables
         """CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -120,16 +126,13 @@ def migrate():
     # Create default user if none exist
     users = conn.execute("SELECT COUNT(*) as c FROM users").fetchone()["c"]
     if users == 0:
-        conn.execute("INSERT INTO users (username) VALUES ('tristan')")
+        conn.execute("INSERT INTO users (username) VALUES ('admin')")
         conn.commit()
-        uid = conn.execute("SELECT id FROM users WHERE username='tristan'").fetchone()["id"]
-        conn.executemany(
-            "INSERT OR IGNORE INTO search_locations (user_id, city, state, label, radius_miles, active) VALUES (?,?,?,?,?,1)",
-            [(uid,'Indianapolis','IN','Indianapolis, IN',30),(uid,'West Lafayette','IN','West Lafayette, IN',25),(uid,'Plainfield','IN','Plainfield, IN',20)]
-        )
+        uid = conn.execute("SELECT id FROM users WHERE username='admin'").fetchone()["id"]
+        # No default locations — each user adds their own via Settings
         conn.execute("UPDATE jobs SET user_id=?", (uid,))
         conn.commit()
-        print(f"  ✓ Created default user 'tristan' (id={uid})")
+        print(f"  ✓ Created default user 'admin' (id={uid}) — log in and add your locations in Settings")
 
     conn.close()
     print("\n✓ Migration complete! Run ./run.sh to start.")
