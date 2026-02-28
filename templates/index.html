@@ -3,1060 +3,1217 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>JobHunter — Tristan Gooding</title>
+<title>JobHunter</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
-:root {
-  --bg: #0a0c10;
-  --surface: #111318;
-  --surface2: #1a1d24;
-  --border: #23262f;
-  --border2: #2e3140;
-  --accent: #6ee7b7;
-  --accent2: #818cf8;
-  --accent3: #fb923c;
-  --text: #e4e6ed;
-  --muted: #6b7080;
-  --danger: #f87171;
-  --score-high: #6ee7b7;
-  --score-mid: #fbbf24;
-  --score-low: #f87171;
-  --radius: 12px;
-  --radius-sm: 8px;
-}
+:root{--bg:#09090b;--surface:#111115;--surface2:#18181c;--surface3:#1f1f24;--border:#27272a;--border2:#3f3f46;--accent:#34d399;--accent2:#a78bfa;--accent3:#fb923c;--text:#e4e4e7;--muted:#71717a;--danger:#f87171;--warn:#fbbf24;--info:#38bdf8;--sheets:#4ade80;--r:10px;--rs:7px;}
+*{box-sizing:border-box;margin:0;padding:0;} a{color:inherit;text-decoration:none;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
-
-body {
-  font-family: 'DM Sans', sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  min-height: 100vh;
-  overflow-x: hidden;
-}
+/* LOGIN */
+#loginScreen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:1000;}
+.login-card{background:var(--surface);border:1px solid var(--border2);border-radius:16px;padding:40px 44px;width:360px;text-align:center;}
+.login-logo{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:var(--accent);margin-bottom:4px;}
+.login-sub{font-size:13px;color:var(--muted);margin-bottom:28px;}
+.login-input{width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--rs);padding:11px 14px;color:var(--text);font-size:15px;font-family:'DM Sans',sans-serif;outline:none;margin-bottom:12px;text-align:center;}
+.login-input:focus{border-color:var(--accent);}
+.login-btn{width:100%;background:var(--accent);color:#09090b;border:none;border-radius:var(--rs);padding:11px;font-family:'Syne',sans-serif;font-weight:700;font-size:15px;cursor:pointer;transition:.15s;}
+.login-btn:hover{background:#6ee7b7;}
+.login-note{font-size:11px;color:var(--muted);margin-top:12px;}
 
 /* SIDEBAR */
-.sidebar {
-  position: fixed;
-  left: 0; top: 0; bottom: 0;
-  width: 220px;
-  background: var(--surface);
-  border-right: 1px solid var(--border);
-  display: flex;
-  flex-direction: column;
-  z-index: 100;
-  padding: 0;
-}
+.sidebar{position:fixed;left:0;top:0;bottom:0;width:220px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:100;overflow-y:auto;}
+.sidebar-logo{padding:18px 16px 14px;border-bottom:1px solid var(--border);}
+.sidebar-logo h1{font-family:'Syne',sans-serif;font-size:17px;font-weight:800;color:var(--accent);}
+.user-badge{margin-top:5px;display:flex;align-items:center;gap:6px;}
+.user-avatar{width:20px;height:20px;border-radius:50%;background:var(--accent2);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#09090b;flex-shrink:0;}
+.user-name{font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.logout-btn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:10px;padding:2px;}
+.logout-btn:hover{color:var(--danger);}
+nav{padding:10px 8px;flex:1;}
+.nav-label{font-size:9px;font-family:'DM Mono',monospace;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;padding:0 8px;margin-bottom:3px;margin-top:8px;}
+.nav-item{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:var(--rs);cursor:pointer;font-size:12px;font-weight:500;color:var(--muted);transition:.12s;margin-bottom:1px;}
+.nav-item:hover{background:var(--surface2);color:var(--text);}
+.nav-item.active{background:rgba(52,211,153,.12);color:var(--accent);}
+.nav-item svg{width:14px;height:14px;flex-shrink:0;}
+.nav-badge{background:var(--accent3);color:#09090b;border-radius:100px;padding:1px 5px;font-size:9px;font-weight:700;font-family:'DM Mono',monospace;margin-left:auto;}
 
-.sidebar-logo {
-  padding: 28px 22px 20px;
-  border-bottom: 1px solid var(--border);
-}
+/* USAGE WIDGETS */
+.usage-section{padding:8px 10px;border-top:1px solid var(--border);}
+.usage-widget{background:var(--surface2);border:1px solid var(--border);border-radius:var(--rs);padding:8px 10px;margin-bottom:6px;}
+.usage-widget:last-child{margin-bottom:0;}
+.usage-header{font-size:9px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;display:flex;justify-content:space-between;margin-bottom:4px;}
+.usage-header .usage-val{color:var(--text);}
+.usage-bar{height:4px;background:var(--surface3);border-radius:100px;overflow:hidden;}
+.usage-fill{height:100%;border-radius:100px;transition:.3s;}
+.usage-fill.green{background:var(--accent);}
+.usage-fill.yellow{background:var(--warn);}
+.usage-fill.red{background:var(--danger);}
+.usage-sub{font-size:8px;color:var(--muted);font-family:'DM Mono',monospace;margin-top:3px;}
 
-.sidebar-logo h1 {
-  font-family: 'Syne', sans-serif;
-  font-size: 20px;
-  font-weight: 800;
-  color: var(--accent);
-  letter-spacing: -0.5px;
-}
+/* SHEETS STATUS */
+.sheets-widget{background:var(--surface2);border:1px solid var(--border);border-radius:var(--rs);padding:8px 10px;margin:0 10px 8px;}
+.sheets-widget.connected{border-color:rgba(74,222,128,.3);}
+.sheets-status-dot{width:6px;height:6px;border-radius:50%;background:var(--muted);display:inline-block;margin-right:5px;}
+.sheets-status-dot.connected{background:var(--sheets);}
+.sheets-sync-btns{display:flex;gap:4px;margin-top:6px;}
+.sheets-sync-btn{flex:1;background:var(--surface3);border:1px solid var(--border2);border-radius:4px;padding:4px;font-size:9px;font-family:'DM Mono',monospace;color:var(--muted);cursor:pointer;text-align:center;transition:.12s;}
+.sheets-sync-btn:hover{color:var(--text);border-color:var(--sheets);}
 
-.sidebar-logo p {
-  font-size: 11px;
-  color: var(--muted);
-  font-family: 'DM Mono', monospace;
-  margin-top: 3px;
-}
-
-.nav-section {
-  padding: 16px 12px 8px;
-  flex: 1;
-}
-
-.nav-label {
-  font-size: 10px;
-  font-family: 'DM Mono', monospace;
-  color: var(--muted);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  padding: 0 10px;
-  margin-bottom: 6px;
-}
-
-.nav-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 9px 10px;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--muted);
-  transition: all 0.15s;
-  text-decoration: none;
-  margin-bottom: 2px;
-}
-
-.nav-item:hover { background: var(--surface2); color: var(--text); }
-.nav-item.active { background: rgba(110,231,183,0.12); color: var(--accent); }
-
-.nav-item svg { width: 16px; height: 16px; flex-shrink: 0; }
-
-.sidebar-bottom {
-  padding: 16px 12px;
-  border-top: 1px solid var(--border);
-}
-
-.scrape-btn {
-  width: 100%;
-  background: var(--accent);
-  color: #0a0c10;
-  border: none;
-  border-radius: var(--radius-sm);
-  padding: 10px 14px;
-  font-family: 'Syne', sans-serif;
-  font-weight: 700;
-  font-size: 13px;
-  cursor: pointer;
-  transition: all 0.15s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-
-.scrape-btn:hover { background: #a7f3d0; transform: translateY(-1px); }
-.scrape-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-.scrape-btn.running { background: var(--accent3); animation: pulse 1.5s infinite; }
-
-@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.7; } }
+.sidebar-bottom{padding:10px;border-top:1px solid var(--border);}
+.scrape-btn{width:100%;background:var(--accent);color:#09090b;border:none;border-radius:var(--rs);padding:9px 12px;font-family:'Syne',sans-serif;font-weight:700;font-size:12px;cursor:pointer;transition:.15s;display:flex;align-items:center;justify-content:center;gap:6px;}
+.scrape-btn:hover{background:#6ee7b7;transform:translateY(-1px);}
+.scrape-btn:disabled{opacity:.5;cursor:not-allowed;transform:none;}
+.scrape-btn.running{background:var(--accent3);animation:pulse 1.5s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.7}}
 
 /* MAIN */
-.main {
-  margin-left: 220px;
-  min-height: 100vh;
-}
-
-.topbar {
-  position: sticky;
-  top: 0;
-  background: rgba(10,12,16,0.92);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--border);
-  padding: 14px 28px;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  z-index: 90;
-}
-
-.search-input {
-  flex: 1;
-  background: var(--surface);
-  border: 1px solid var(--border2);
-  border-radius: var(--radius-sm);
-  padding: 9px 14px;
-  color: var(--text);
-  font-size: 14px;
-  font-family: 'DM Sans', sans-serif;
-  outline: none;
-  transition: border-color 0.15s;
-}
-
-.search-input:focus { border-color: var(--accent2); }
-.search-input::placeholder { color: var(--muted); }
-
-.filter-select {
-  background: var(--surface);
-  border: 1px solid var(--border2);
-  border-radius: var(--radius-sm);
-  padding: 9px 12px;
-  color: var(--text);
-  font-size: 13px;
-  font-family: 'DM Sans', sans-serif;
-  outline: none;
-  cursor: pointer;
-}
-
-.filter-select:focus { border-color: var(--accent2); }
-
-.stats-bar {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  font-family: 'DM Mono', monospace;
-  font-size: 12px;
-  color: var(--muted);
-  white-space: nowrap;
-}
-
-.stat-pill {
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: 100px;
-  padding: 4px 10px;
-  font-size: 11px;
-}
-
-.stat-pill span { color: var(--accent); font-weight: 500; }
+.main{margin-left:220px;min-height:100vh;}
+.topbar{position:sticky;top:0;background:rgba(9,9,11,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:10px 20px;display:flex;align-items:center;gap:7px;z-index:90;flex-wrap:wrap;}
+.search-input{flex:1;min-width:160px;background:var(--surface);border:1px solid var(--border2);border-radius:var(--rs);padding:7px 11px;color:var(--text);font-size:12px;font-family:'DM Sans',sans-serif;outline:none;transition:.15s;}
+.search-input:focus{border-color:var(--accent2);}
+.search-input::placeholder{color:var(--muted);}
+.filter-select{background:var(--surface);border:1px solid var(--border2);border-radius:var(--rs);padding:7px 8px;color:var(--text);font-size:11px;font-family:'DM Sans',sans-serif;outline:none;cursor:pointer;}
+.score-filter{display:flex;align-items:center;gap:4px;font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);white-space:nowrap;}
+.score-filter input[type=range]{width:65px;accent-color:var(--accent);}
+.stats-bar{display:flex;gap:4px;align-items:center;flex-shrink:0;flex-wrap:wrap;}
+.stat-pill{background:var(--surface2);border:1px solid var(--border);border-radius:100px;padding:3px 7px;font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);white-space:nowrap;}
+.stat-pill span{color:var(--accent);font-weight:600;}
+.stat-pill.warn span{color:var(--warn);}
+.stat-pill.sheets span{color:var(--sheets);}
 
 /* PAGES */
-.page { display: none; padding: 28px; }
-.page.active { display: block; }
+.page{display:none;padding:20px;}
+.page.active{display:block;}
+.page-title{font-family:'Syne',sans-serif;font-size:19px;font-weight:700;margin-bottom:3px;}
+.page-sub{font-size:12px;color:var(--muted);margin-bottom:16px;}
+
+/* BANNER */
+.scrape-banner{background:rgba(52,211,153,.07);border-bottom:1px solid rgba(52,211,153,.18);padding:7px 20px;font-size:11px;font-family:'DM Mono',monospace;color:var(--accent);display:flex;align-items:center;gap:8px;}
+.scrape-banner.hidden{display:none;}
+.banner-badge{background:var(--accent);color:#09090b;border-radius:100px;padding:2px 7px;font-size:9px;font-weight:700;}
+.banner-sheets{background:rgba(74,222,128,.07);border-bottom:1px solid rgba(74,222,128,.18);padding:7px 20px;font-size:11px;font-family:'DM Mono',monospace;color:var(--sheets);display:flex;align-items:center;gap:8px;}
+.banner-sheets.hidden{display:none;}
 
 /* JOB GRID */
-.jobs-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 20px;
-}
-
-.jobs-title {
-  font-family: 'Syne', sans-serif;
-  font-size: 22px;
-  font-weight: 700;
-}
-
-.jobs-count {
-  font-family: 'DM Mono', monospace;
-  font-size: 12px;
-  color: var(--muted);
-  margin-top: 2px;
-}
-
-.jobs-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-  gap: 16px;
-}
+.jobs-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(295px,1fr));gap:11px;}
 
 /* JOB CARD */
-.job-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 20px;
-  position: relative;
-  transition: all 0.2s;
-  cursor: default;
-}
+.job-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:15px;transition:.18s;position:relative;}
+.job-card:hover{border-color:var(--border2);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.4);}
+.job-card.saved{border-color:rgba(52,211,153,.2);}
+.job-card.from-sheets{border-left:2px solid rgba(74,222,128,.4);}
+.job-card.is-new::before{content:'NEW';position:absolute;top:9px;right:9px;background:var(--accent3);color:#09090b;font-size:8px;font-weight:700;font-family:'DM Mono',monospace;padding:2px 5px;border-radius:4px;}
+.card-top{display:flex;align-items:flex-start;gap:9px;margin-bottom:8px;}
+.card-info{flex:1;min-width:0;}
+.card-co{font-size:9px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.card-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;line-height:1.3;margin-top:2px;}
+.score-badge{flex-shrink:0;width:40px;height:40px;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;font-size:13px;}
+.score-badge .sl{font-size:7px;font-family:'DM Mono',monospace;font-weight:400;opacity:.7;margin-top:1px;}
+.sh{background:rgba(52,211,153,.12);color:var(--accent);border:1px solid rgba(52,211,153,.25);}
+.sm{background:rgba(251,191,36,.12);color:var(--warn);border:1px solid rgba(251,191,36,.25);}
+.sl2{background:rgba(248,113,113,.12);color:var(--danger);border:1px solid rgba(248,113,113,.25);}
+.su{background:var(--surface2);color:var(--muted);border:1px solid var(--border);}
+.card-meta{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:7px;}
+.tag{font-size:9px;font-family:'DM Mono',monospace;background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:2px 5px;color:var(--muted);}
+.tag.remote{border-color:rgba(52,211,153,.25);color:var(--accent);background:rgba(52,211,153,.06);}
+.tag.hybrid{border-color:rgba(167,139,250,.25);color:var(--accent2);background:rgba(167,139,250,.06);}
+.tag.sal{border-color:rgba(251,191,36,.25);color:var(--warn);background:rgba(251,191,36,.06);}
+.tag.sheets-tag{border-color:rgba(74,222,128,.25);color:var(--sheets);background:rgba(74,222,128,.06);}
+.card-reasons{font-size:11px;color:var(--muted);line-height:1.5;margin-bottom:9px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.card-actions{display:flex;gap:4px;align-items:center;flex-wrap:wrap;}
+.status-select{background:var(--surface2);border:1px solid var(--border);border-radius:var(--rs);padding:3px 6px;color:var(--muted);font-size:9px;font-family:'DM Mono',monospace;cursor:pointer;outline:none;margin-top:6px;}
+.status-select.interested{border-color:rgba(56,189,248,.4);color:var(--info);}
+.status-select.applied{border-color:rgba(167,139,250,.4);color:var(--accent2);}
+.status-select.interview{border-color:rgba(251,191,36,.4);color:var(--warn);}
+.status-select.offer{border-color:rgba(52,211,153,.4);color:var(--accent);}
+.status-select.rejected{border-color:rgba(248,113,113,.4);color:var(--danger);}
+.card-notes{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--rs);padding:4px 7px;color:var(--muted);font-size:10px;font-family:'DM Sans',sans-serif;resize:none;min-height:32px;outline:none;margin-top:5px;transition:.15s;}
+.card-notes:focus{border-color:var(--accent2);color:var(--text);}
+.card-notes::placeholder{color:var(--border2);}
+.btn{display:inline-flex;align-items:center;gap:4px;padding:5px 9px;border-radius:var(--rs);font-size:10px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;transition:.12s;border:none;}
+.btn-primary{background:var(--accent);color:#09090b;}
+.btn-primary:hover{background:#6ee7b7;}
+.btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border2);}
+.btn-ghost:hover{color:var(--text);background:var(--surface2);}
+.btn-ghost.on{color:var(--accent);border-color:rgba(52,211,153,.35);}
+.btn-ghost.sheets{color:var(--sheets);border-color:rgba(74,222,128,.35);}
+.btn-icon{background:transparent;color:var(--muted);padding:5px;border:1px solid transparent;border-radius:var(--rs);}
+.btn-icon:hover{color:var(--danger);background:rgba(248,113,113,.08);}
+.card-date{margin-left:auto;font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);}
+.empty{text-align:center;padding:60px 32px;color:var(--muted);grid-column:1/-1;}
+.empty h3{font-family:'Syne',sans-serif;font-size:15px;color:var(--text);margin:10px 0 5px;}
+.empty p{font-size:12px;}
 
-.job-card:hover {
-  border-color: var(--border2);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-}
-
-.job-card.saved { border-color: rgba(110,231,183,0.3); }
-
-.card-top {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 12px;
-}
-
-.card-company {
-  font-size: 11px;
-  font-family: 'DM Mono', monospace;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
-
-.card-title {
-  font-family: 'Syne', sans-serif;
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--text);
-  margin-top: 3px;
-  line-height: 1.3;
-}
-
-.score-badge {
-  flex-shrink: 0;
-  width: 48px;
-  height: 48px;
-  border-radius: 10px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-family: 'Syne', sans-serif;
-  font-weight: 800;
-  font-size: 16px;
-}
-
-.score-badge .score-label {
-  font-size: 9px;
-  font-family: 'DM Mono', monospace;
-  font-weight: 400;
-  opacity: 0.8;
-}
-
-.score-high { background: rgba(110,231,183,0.15); color: var(--score-high); border: 1px solid rgba(110,231,183,0.3); }
-.score-mid  { background: rgba(251,191,36,0.15);  color: var(--score-mid);  border: 1px solid rgba(251,191,36,0.3); }
-.score-low  { background: rgba(248,113,113,0.15); color: var(--score-low);  border: 1px solid rgba(248,113,113,0.3); }
-
-.card-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 12px;
-}
-
-.meta-tag {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 11px;
-  font-family: 'DM Mono', monospace;
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 3px 8px;
-  color: var(--muted);
-}
-
-.meta-tag.remote { border-color: rgba(110,231,183,0.3); color: var(--accent); background: rgba(110,231,183,0.06); }
-.meta-tag.hybrid { border-color: rgba(129,140,248,0.3); color: var(--accent2); background: rgba(129,140,248,0.06); }
-.meta-tag.salary { border-color: rgba(251,191,36,0.3); color: var(--score-mid); background: rgba(251,191,36,0.06); }
-
-.card-reasons {
-  font-size: 13px;
-  color: var(--muted);
-  line-height: 1.55;
-  margin-bottom: 14px;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.card-actions {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-.btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 7px 12px;
-  border-radius: var(--radius-sm);
-  font-size: 12px;
-  font-weight: 600;
-  font-family: 'DM Sans', sans-serif;
-  cursor: pointer;
-  transition: all 0.15s;
-  text-decoration: none;
-  border: none;
-}
-
-.btn-primary {
-  background: var(--accent);
-  color: #0a0c10;
-}
-.btn-primary:hover { background: #a7f3d0; }
-
-.btn-ghost {
-  background: transparent;
-  color: var(--muted);
-  border: 1px solid var(--border2);
-}
-.btn-ghost:hover { color: var(--text); border-color: var(--border2); background: var(--surface2); }
-
-.btn-ghost.active { color: var(--accent); border-color: rgba(110,231,183,0.4); }
-
-.btn-icon {
-  background: transparent;
-  color: var(--muted);
-  padding: 7px;
-  border: 1px solid transparent;
-  border-radius: var(--radius-sm);
-}
-.btn-icon:hover { color: var(--danger); background: rgba(248,113,113,0.08); }
-
-.card-date {
-  margin-left: auto;
-  font-family: 'DM Mono', monospace;
-  font-size: 10px;
-  color: var(--muted);
-}
-
-/* SCORE FILTER SLIDER */
-.score-filter {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12px;
-  font-family: 'DM Mono', monospace;
-  color: var(--muted);
-}
-
-.score-filter input[type=range] {
-  width: 90px;
-  accent-color: var(--accent);
-}
-
-/* MAP PAGE */
-#map { height: 70vh; border-radius: var(--radius); border: 1px solid var(--border); }
+/* MAP */
+#map{height:66vh;border-radius:var(--r);border:1px solid var(--border);}
+.leaflet-tile{filter:brightness(.55) invert(1) contrast(3) hue-rotate(200deg) saturate(.3) brightness(.65);}
+.leaflet-container{background:#18181c;}
 
 /* SETTINGS */
-.settings-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-  max-width: 800px;
-}
+.settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:900px;}
+.s-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px;}
+.s-card.full{grid-column:1/-1;}
+.s-card h3{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:11px;}
+.s-card h3 .badge{font-size:9px;font-weight:400;font-family:'DM Mono',monospace;background:rgba(52,211,153,.15);color:var(--accent);border-radius:4px;padding:1px 6px;margin-left:6px;}
+.form-group{margin-bottom:9px;}
+.form-label{font-size:9px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:3px;}
+.form-input{width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--rs);padding:7px 9px;color:var(--text);font-size:11px;font-family:'DM Mono',monospace;outline:none;transition:.15s;}
+.form-input:focus{border-color:var(--accent2);}
+.form-input::placeholder{color:var(--muted);}
+.form-row{display:flex;gap:5px;align-items:flex-end;}
+.form-row .form-group{flex:1;margin-bottom:0;}
 
-.settings-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 24px;
-}
+/* SHEETS PANEL */
+.sheets-panel{border:1px solid rgba(74,222,128,.2);border-radius:var(--r);padding:18px;background:rgba(74,222,128,.03);}
+.sheets-status-row{display:flex;align-items:center;gap:8px;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border);}
+.sheets-status-indicator{width:8px;height:8px;border-radius:50%;background:var(--muted);}
+.sheets-status-indicator.ok{background:var(--sheets);}
+.sheets-sync-row{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px;}
+.sheets-sync-history{margin-top:12px;}
+.sheets-history-item{font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);padding:5px 0;border-bottom:1px solid var(--border);display:flex;gap:10px;}
+.sheets-history-item:last-child{border-bottom:none;}
+.upload-zone{border:2px dashed var(--border2);border-radius:var(--rs);padding:14px;text-align:center;cursor:pointer;transition:.15s;position:relative;}
+.upload-zone:hover{border-color:var(--sheets);}
+.upload-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
 
-.settings-card h3 {
-  font-family: 'Syne', sans-serif;
-  font-size: 15px;
-  font-weight: 700;
-  margin-bottom: 16px;
-  color: var(--text);
-}
+/* LOC */
+.loc-list{display:flex;flex-direction:column;gap:4px;margin-bottom:9px;}
+.loc-item{display:flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--rs);padding:6px 9px;}
+.loc-label{flex:1;font-size:11px;font-family:'DM Mono',monospace;}
+.loc-radius{font-size:9px;color:var(--muted);font-family:'DM Mono',monospace;}
+.loc-toggle{cursor:pointer;font-size:9px;padding:2px 5px;border-radius:4px;border:none;font-family:'DM Mono',monospace;}
+.loc-toggle.on{background:rgba(52,211,153,.15);color:var(--accent);}
+.loc-toggle.off{background:var(--surface3);color:var(--muted);}
+.loc-del{background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;line-height:1;}
+.loc-del:hover{color:var(--danger);}
 
-.form-group {
-  margin-bottom: 14px;
-}
+/* PROFILE */
+.resume-box{background:var(--surface2);border:2px dashed var(--border2);border-radius:var(--r);padding:20px;text-align:center;cursor:pointer;transition:.15s;position:relative;}
+.resume-box:hover{border-color:var(--accent2);}
+.resume-box.has-resume{border-style:solid;border-color:rgba(52,211,153,.3);}
+.resume-box input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.resume-box h4{font-family:'Syne',sans-serif;font-size:13px;margin-bottom:3px;}
+.resume-box p{font-size:11px;color:var(--muted);}
+.resume-preview{background:var(--surface3);border:1px solid var(--border);border-radius:var(--rs);padding:9px;font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);white-space:pre-wrap;max-height:90px;overflow:hidden;margin-top:7px;text-align:left;}
 
-.form-label {
-  font-size: 11px;
-  font-family: 'DM Mono', monospace;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  display: block;
-  margin-bottom: 6px;
-}
+/* ADVISOR */
+.advisor-section{max-width:760px;}
+.advisor-textarea{width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--rs);padding:8px 11px;color:var(--text);font-size:12px;font-family:'DM Sans',sans-serif;outline:none;resize:vertical;min-height:60px;}
+.advisor-textarea:focus{border-color:var(--accent2);}
+.advisor-textarea::placeholder{color:var(--muted);}
+.advisor-results{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-top:12px;}
+.advisor-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:15px;}
+.advisor-card.full{grid-column:1/-1;}
+.advisor-card h4{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;margin-bottom:7px;color:var(--accent);}
+.advisor-list-item{font-size:11px;color:var(--muted);padding:3px 0;border-bottom:1px solid var(--border);display:flex;gap:6px;align-items:flex-start;}
+.advisor-list-item:last-child{border-bottom:none;}
+.advisor-list-item strong{color:var(--text);flex-shrink:0;}
+.advisor-list-item a{color:var(--accent2);font-family:'DM Mono',monospace;font-size:9px;}
+.advisor-chip{display:inline-block;background:var(--surface2);border:1px solid var(--border2);border-radius:4px;padding:2px 6px;font-size:10px;font-family:'DM Mono',monospace;color:var(--text);margin:2px;}
+.advisor-advice{font-size:12px;color:var(--muted);line-height:1.6;}
 
-.form-input {
-  width: 100%;
-  background: var(--surface2);
-  border: 1px solid var(--border2);
-  border-radius: var(--radius-sm);
-  padding: 9px 12px;
-  color: var(--text);
-  font-size: 13px;
-  font-family: 'DM Mono', monospace;
-  outline: none;
-  transition: border-color 0.15s;
-}
-
-.form-input:focus { border-color: var(--accent2); }
+/* TRACKER */
+.status-overview{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:16px;}
+.status-chip{background:var(--surface);border:1px solid var(--border);border-radius:var(--rs);padding:8px 12px;font-size:10px;font-family:'DM Mono',monospace;cursor:pointer;transition:.15s;min-width:72px;}
+.status-chip:hover{border-color:var(--border2);}
+.status-chip.active-filter{border-color:var(--accent2);}
+.status-chip .sc-count{font-size:16px;font-weight:700;font-family:'Syne',sans-serif;display:block;color:var(--text);}
 
 /* LOG */
-.log-container {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 20px;
-  font-family: 'DM Mono', monospace;
-  font-size: 12px;
-  height: 300px;
-  overflow-y: auto;
-  color: var(--muted);
-}
+.log-container{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:12px;font-family:'DM Mono',monospace;font-size:10px;height:220px;overflow-y:auto;color:var(--muted);}
+.log-line{padding:1px 0;}
+.log-entry{background:var(--surface2);border:1px solid var(--border);border-radius:var(--rs);padding:9px 11px;margin-bottom:5px;font-size:10px;}
+.log-entry-head{display:flex;gap:8px;margin-bottom:2px;align-items:center;font-family:'DM Mono',monospace;}
+.log-ok{color:var(--accent);}
+.log-err{color:var(--danger);}
 
-.log-line { padding: 2px 0; }
-.log-line.success { color: var(--accent); }
-.log-line.error { color: var(--danger); }
-
-/* SCRAPE STATUS OVERLAY */
-.scrape-overlay {
-  position: fixed;
-  bottom: 24px;
-  right: 24px;
-  background: var(--surface);
-  border: 1px solid var(--border2);
-  border-radius: var(--radius);
-  padding: 16px 20px;
-  min-width: 280px;
-  z-index: 200;
-  box-shadow: 0 12px 40px rgba(0,0,0,0.5);
-  display: none;
-}
-
-.scrape-overlay.visible { display: block; animation: slideUp 0.2s ease; }
-@keyframes slideUp { from { transform: translateY(10px); opacity: 0; } }
-
-.scrape-overlay-title {
-  font-family: 'Syne', sans-serif;
-  font-weight: 700;
-  font-size: 13px;
-  color: var(--accent3);
-  margin-bottom: 6px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.scrape-overlay-msg {
-  font-size: 12px;
-  font-family: 'DM Mono', monospace;
-  color: var(--muted);
-}
-
-.spinner {
-  width: 12px; height: 12px;
-  border: 2px solid rgba(251,146,60,0.3);
-  border-top-color: var(--accent3);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-  display: inline-block;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-
-/* EMPTY STATE */
-.empty-state {
-  text-align: center;
-  padding: 80px 40px;
-  color: var(--muted);
-}
-
-.empty-state svg { margin-bottom: 16px; opacity: 0.3; }
-.empty-state h3 { font-family: 'Syne', sans-serif; font-size: 18px; color: var(--text); margin-bottom: 8px; }
-.empty-state p { font-size: 14px; }
-
-/* Leaflet dark overrides */
-.leaflet-tile { filter: brightness(0.6) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3) brightness(0.7); }
-.leaflet-container { background: #1a1d24; }
+/* OVERLAYS */
+.scrape-overlay{position:fixed;bottom:18px;right:18px;background:var(--surface);border:1px solid var(--border2);border-radius:var(--r);padding:11px 14px;min-width:230px;z-index:200;box-shadow:0 12px 36px rgba(0,0,0,.5);display:none;}
+.scrape-overlay.visible{display:block;animation:slideUp .2s ease;}
+@keyframes slideUp{from{transform:translateY(8px);opacity:0}}
+.scrape-overlay-title{font-family:'Syne',sans-serif;font-weight:700;font-size:11px;color:var(--accent3);margin-bottom:4px;display:flex;align-items:center;gap:5px;}
+.scrape-overlay-msg{font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);}
+.spinner{width:10px;height:10px;border:2px solid rgba(251,146,60,.3);border-top-color:var(--accent3);border-radius:50%;animation:spin .8s linear infinite;display:inline-block;flex-shrink:0;}
+@keyframes spin{to{transform:rotate(360deg)}}
 
 /* MODAL */
-.modal-overlay {
-  position: fixed; inset: 0;
-  background: rgba(0,0,0,0.7);
-  backdrop-filter: blur(4px);
-  z-index: 300;
-  display: none;
-  align-items: center;
-  justify-content: center;
-}
-.modal-overlay.open { display: flex; }
-.modal {
-  background: var(--surface);
-  border: 1px solid var(--border2);
-  border-radius: var(--radius);
-  padding: 28px;
-  max-width: 600px;
-  width: 90%;
-  max-height: 80vh;
-  overflow-y: auto;
-}
-.modal-title { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 800; margin-bottom: 6px; }
-.modal-company { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--muted); margin-bottom: 16px; }
-.modal-desc { font-size: 14px; line-height: 1.6; color: var(--muted); white-space: pre-wrap; }
-.modal-close { position: absolute; top: 16px; right: 16px; background: none; border: none; color: var(--muted); cursor: pointer; font-size: 20px; }
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);z-index:300;display:none;align-items:center;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--surface);border:1px solid var(--border2);border-radius:var(--r);padding:22px;max-width:560px;width:90%;max-height:80vh;overflow-y:auto;}
+.modal-title{font-family:'Syne',sans-serif;font-size:17px;font-weight:800;margin-bottom:3px;}
+.modal-co{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-bottom:11px;}
+.modal-desc{font-size:12px;line-height:1.6;color:var(--muted);white-space:pre-wrap;max-height:260px;overflow-y:auto;}
+.modal-footer{margin-top:14px;display:flex;gap:6px;flex-wrap:wrap;}
 
-/* TOGGLE */
-.toggle-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
-.toggle-label { font-size: 13px; color: var(--text); }
-.toggle { position: relative; width: 36px; height: 20px; }
-.toggle input { opacity: 0; width: 0; height: 0; }
-.toggle-slider {
-  position: absolute; inset: 0;
-  background: var(--border2);
-  border-radius: 100px;
-  cursor: pointer;
-  transition: 0.2s;
-}
-.toggle-slider::before {
-  content: '';
-  position: absolute;
-  width: 14px; height: 14px;
-  background: white;
-  border-radius: 50%;
-  left: 3px; top: 3px;
-  transition: 0.2s;
-}
-.toggle input:checked + .toggle-slider { background: var(--accent); }
-.toggle input:checked + .toggle-slider::before { transform: translateX(16px); }
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--border2);border-radius:var(--rs);padding:8px 15px;font-size:11px;font-family:'DM Mono',monospace;z-index:400;display:none;box-shadow:0 8px 24px rgba(0,0,0,.5);}
+.toast.ok{border-color:rgba(52,211,153,.4);color:var(--accent);}
+.toast.err{border-color:rgba(248,113,113,.4);color:var(--danger);}
+.toast.info{border-color:rgba(74,222,128,.4);color:var(--sheets);}
+.toast.show{display:block;animation:fadeInT .2s;}
+@keyframes fadeInT{from{opacity:0;transform:translateX(-50%) translateY(4px)}}
 
-/* Responsive */
-@media (max-width: 768px) {
-  .sidebar { width: 60px; }
-  .sidebar-logo p, .nav-item span, .sidebar-logo h1 { display: none; }
-  .main { margin-left: 60px; }
-  .settings-grid { grid-template-columns: 1fr; }
-  .jobs-grid { grid-template-columns: 1fr; }
+@media(max-width:768px){
+  .sidebar{width:50px;}
+  .sidebar-logo h1,.nav-item span,.user-badge,.usage-section,.sheets-widget{display:none;}
+  .main{margin-left:50px;}
+  .settings-grid,.advisor-results{grid-template-columns:1fr;}
+  .settings-grid .s-card.full{grid-column:1;}
 }
 </style>
 </head>
 <body>
 
-<aside class="sidebar">
+<div id="loginScreen">
+  <div class="login-card">
+    <div class="login-logo">⬡ JobHunter</div>
+    <div class="login-sub">Enter your username to continue</div>
+    <input class="login-input" type="text" id="loginInput" placeholder="your name" autocomplete="off" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="login-btn" onclick="doLogin()">Enter →</button>
+    <div class="login-note">New usernames auto-created. Separate jobs per account.</div>
+  </div>
+</div>
+
+<aside class="sidebar" id="appSidebar" style="display:none">
   <div class="sidebar-logo">
     <h1>⬡ JobHunter</h1>
-    <p>tristan@purdue</p>
+    <div class="user-badge">
+      <div class="user-avatar" id="userAvatar">T</div>
+      <span class="user-name" id="userNameLabel">user</span>
+      <button class="logout-btn" onclick="doLogout()" title="Switch user">⇄</button>
+    </div>
   </div>
-  <nav class="nav-section">
-    <div class="nav-label">Views</div>
-    <a class="nav-item active" onclick="showPage('jobs')" href="#">
+  <nav>
+    <div class="nav-label">Listings</div>
+    <div class="nav-item active" onclick="showPage('jobs',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
       <span>All Jobs</span>
-    </a>
-    <a class="nav-item" onclick="showPage('saved')" href="#">
+      <span class="nav-badge" id="newBadge" style="display:none">0</span>
+    </div>
+    <div class="nav-item" onclick="showPage('tracker',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      <span>Tracker</span>
+    </div>
+    <div class="nav-item" onclick="showPage('saved',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
       <span>Saved</span>
-    </a>
-    <a class="nav-item" onclick="showPage('map')" href="#">
+    </div>
+    <div class="nav-item" onclick="showPage('map',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
       <span>Map</span>
-    </a>
-    <a class="nav-item" onclick="showPage('log')" href="#">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-      <span>Log</span>
-    </a>
-    <a class="nav-item" onclick="showPage('settings')" href="#">
+    </div>
+    <div class="nav-label">Tools</div>
+    <div class="nav-item" onclick="showPage('advisor',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+      <span>AI Advisor</span>
+    </div>
+    <div class="nav-item" onclick="showPage('profile',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span>My Profile</span>
+    </div>
+    <div class="nav-item" onclick="showPage('settings',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
       <span>Settings</span>
-    </a>
+    </div>
+    <div class="nav-item" onclick="showPage('log',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/></svg>
+      <span>Log</span>
+    </div>
   </nav>
+
+  <!-- USAGE WIDGETS -->
+  <div class="usage-section">
+    <div class="usage-widget">
+      <div class="usage-header">Free Sources<span class="usage-val" style="color:var(--accent)">Active</span></div>
+      <div style="display:flex;gap:3px;margin-top:3px;flex-wrap:wrap">
+        <span style="font-size:8px;font-family:'DM Mono',monospace;background:rgba(52,211,153,.1);color:var(--accent);border-radius:3px;padding:1px 5px">Muse</span>
+        <span style="font-size:8px;font-family:'DM Mono',monospace;background:rgba(52,211,153,.1);color:var(--accent);border-radius:3px;padding:1px 5px">Remotive</span>
+        <span style="font-size:8px;font-family:'DM Mono',monospace;background:rgba(52,211,153,.1);color:var(--accent);border-radius:3px;padding:1px 5px">Greenhouse</span>
+      </div>
+    </div>
+    <div class="usage-widget">
+      <div class="usage-header">JSearch Month<span class="usage-val" id="jsText">0/200</span></div>
+      <div class="usage-bar"><div class="usage-fill green" id="jsBar" style="width:0%"></div></div>
+      <div class="usage-sub" id="jsSub">200 calls remaining · company boards only</div>
+    </div>
+  </div>
+
+  <!-- SHEETS WIDGET -->
+  <div class="sheets-widget" id="sheetsWidget">
+    <div style="font-size:9px;font-family:'DM Mono',monospace;color:var(--muted);display:flex;align-items:center">
+      <span class="sheets-status-dot" id="sheetsDot"></span>
+      <span id="sheetsStatusText">Sheets not configured</span>
+    </div>
+    <div class="sheets-sync-btns" id="sheetsSyncBtns" style="display:none">
+      <button class="sheets-sync-btn" onclick="syncFromSheet()" title="Pull from Google Sheets">↓ Pull</button>
+      <button class="sheets-sync-btn" onclick="syncToSheet()" title="Push to Google Sheets">↑ Push</button>
+    </div>
+  </div>
+
   <div class="sidebar-bottom">
     <button class="scrape-btn" id="scrapeBtn" onclick="triggerScrape()">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
       Scrape Now
     </button>
   </div>
 </aside>
 
-<main class="main">
+<main class="main" id="appMain" style="display:none">
   <div class="topbar">
-    <input class="search-input" type="text" placeholder="Search jobs, companies, locations..." id="searchInput" oninput="filterJobs()">
+    <input class="search-input" type="text" placeholder="Search jobs, companies, notes..." id="searchInput" oninput="filterJobs()">
     <select class="filter-select" id="workTypeFilter" onchange="filterJobs()">
       <option value="">All Types</option>
       <option value="Remote">Remote</option>
       <option value="Hybrid">Hybrid</option>
       <option value="Onsite">Onsite</option>
     </select>
+    <select class="filter-select" id="sourceFilter" onchange="filterJobs()">
+      <option value="">All Sources</option>
+      <option value="Adzuna">Adzuna</option>
+      <option value="Sheets Import">Sheets</option>
+    </select>
     <select class="filter-select" id="sortFilter" onchange="filterJobs()">
       <option value="match_score">Best Match</option>
       <option value="date_found">Newest</option>
-      <option value="salary">Salary</option>
+      <option value="salary">Salary ↓</option>
       <option value="title">Title A-Z</option>
+      <option value="company">Company A-Z</option>
     </select>
     <div class="score-filter">
-      <span>Min</span>
-      <input type="range" min="0" max="90" step="10" value="0" id="scoreSlider" oninput="updateScoreLabel(); filterJobs()">
+      Min <input type="range" min="0" max="90" step="10" value="0" id="scoreSlider" oninput="document.getElementById('scoreLabel').textContent=this.value+'%';filterJobs()">
       <span id="scoreLabel" style="color:var(--accent);font-weight:600">0%</span>
     </div>
+    <label style="display:flex;align-items:center;gap:3px;font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);cursor:pointer;white-space:nowrap">
+      <input type="checkbox" id="hideUnscoredCb" onchange="filterJobs()" style="accent-color:var(--accent);width:12px;height:12px"> Scored only
+    </label>
     <div class="stats-bar">
       <div class="stat-pill"><span id="statTotal">0</span> jobs</div>
       <div class="stat-pill"><span id="statSaved">0</span> saved</div>
+      <div class="stat-pill warn" id="unscoredPill" style="display:none"><span id="statUnscored">0</span> unscored</div>
     </div>
   </div>
 
-  <!-- JOBS PAGE -->
+  <!-- ALL JOBS -->
   <div class="page active" id="page-jobs">
-    <div class="jobs-header">
+    <div class="scrape-banner hidden" id="scrapeBanner">
+      <span class="banner-badge" id="bannerCount">0 new</span>
+      jobs from latest scrape —
+      <button class="btn btn-ghost" style="font-size:9px;padding:3px 7px" onclick="rescoreUnscored()">Re-score unscored</button>
+      <button class="btn btn-ghost" style="font-size:9px;padding:3px 7px;margin-left:auto" onclick="dismissBanner('scrapeBanner')">×</button>
+    </div>
+    <div class="banner-sheets hidden" id="sheetsBanner">
+      <span class="banner-badge" style="background:var(--sheets)">Sheets</span>
+      <span id="sheetsBannerMsg">Synced from Google Sheets</span>
+      <button class="btn btn-ghost sheets" style="font-size:9px;padding:3px 7px;margin-left:auto" onclick="dismissBanner('sheetsBanner')">×</button>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding:0 1px">
       <div>
-        <div class="jobs-title">Job Listings</div>
-        <div class="jobs-count" id="jobsCount">Loading...</div>
+        <div class="page-title">All Jobs</div>
+        <div style="font-size:11px;color:var(--muted)" id="jobsCount">Loading…</div>
+      </div>
+      <div style="display:flex;gap:5px;flex-wrap:wrap">
+        <button class="btn btn-ghost" onclick="exportJobs(false)">↓ Export CSV</button>
+        <button class="btn btn-ghost" onclick="exportJobs(true)">↓ Saved CSV</button>
       </div>
     </div>
     <div class="jobs-grid" id="jobsGrid"></div>
   </div>
 
-  <!-- SAVED PAGE -->
+  <!-- TRACKER -->
+  <div class="page" id="page-tracker">
+    <div class="page-title">Application Tracker</div>
+    <div class="page-sub">Track your application pipeline. Syncs with your Google Sheet.</div>
+    <div class="status-overview" id="statusOverview"></div>
+    <div class="jobs-grid" id="trackerGrid"></div>
+  </div>
+
+  <!-- SAVED -->
   <div class="page" id="page-saved">
-    <div class="jobs-header">
-      <div>
-        <div class="jobs-title">Saved Jobs</div>
-        <div class="jobs-count" id="savedCount">0 saved</div>
-      </div>
-    </div>
+    <div class="page-title">Saved Jobs</div>
+    <div class="page-sub" id="savedCount">0 saved</div>
     <div class="jobs-grid" id="savedGrid"></div>
   </div>
 
-  <!-- MAP PAGE -->
+  <!-- MAP -->
   <div class="page" id="page-map">
-    <div class="jobs-header">
-      <div class="jobs-title">Job Locations</div>
-    </div>
+    <div class="page-title">Job Locations</div>
+    <div class="page-sub">Green=strong match, yellow=partial, red=low, gray=unscored. Click markers for details.</div>
     <div id="map"></div>
   </div>
 
-  <!-- LOG PAGE -->
-  <div class="page" id="page-log">
-    <div class="jobs-header">
-      <div class="jobs-title">Scrape Log</div>
+  <!-- AI ADVISOR -->
+  <div class="page" id="page-advisor">
+    <div class="page-title">AI Career Advisor</div>
+    <div class="page-sub">Personalized job title, company, and job board recommendations from your resume.</div>
+    <div class="advisor-section">
+      <div class="s-card" style="margin-bottom:12px">
+        <h3>Optional Context</h3>
+        <textarea class="advisor-textarea" id="advisorContext" placeholder='e.g. "Open to embedded systems or AI research, prefer companies with mentorship programs..."' style="margin-bottom:8px"></textarea>
+        <div style="display:flex;align-items:center;gap:8px">
+          <button class="btn btn-primary" onclick="runAdvisor()" id="advisorBtn">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+            Get Recommendations
+          </button>
+          <span style="font-size:10px;color:var(--muted)">Uses Purdue GenAI · ~15s</span>
+        </div>
+      </div>
+      <div id="advisorResults" style="display:none">
+        <div class="advisor-results" id="advisorResultsGrid"></div>
+      </div>
     </div>
-    <div class="log-container" id="logContainer">
-      <div class="log-line" style="color:var(--muted)">No scrapes yet. Hit "Scrape Now" to get started.</div>
-    </div>
-    <div style="margin-top:16px; font-size:12px; font-family:'DM Mono',monospace; color:var(--muted)" id="lastScrapeInfo"></div>
   </div>
 
-  <!-- SETTINGS PAGE -->
-  <div class="page" id="page-settings">
-    <div class="jobs-header">
-      <div class="jobs-title">Settings</div>
+  <!-- PROFILE -->
+  <div class="page" id="page-profile">
+    <div class="page-title">My Profile</div>
+    <div class="page-sub">Resume is used for AI matching. Upload once, stays saved to your account.</div>
+    <div style="max-width:560px;display:flex;flex-direction:column;gap:13px">
+      <div class="s-card">
+        <h3>Resume</h3>
+        <div class="resume-box" id="resumeBox">
+          <input type="file" accept=".pdf,.txt,.docx,.doc,.md" onchange="uploadResume(this)">
+          <div id="resumeBoxContent"><h4>📄 Drop or click to upload</h4><p>PDF, DOCX, or TXT</p></div>
+        </div>
+        <div id="resumePreviewWrap" style="display:none">
+          <div class="resume-preview" id="resumePreview"></div>
+        </div>
+      </div>
+      <div class="s-card">
+        <h3>Persistent Context</h3>
+        <p style="font-size:11px;color:var(--muted);margin-bottom:7px">Always sent with AI matching.</p>
+        <textarea class="advisor-textarea" id="profileContext" style="width:100%;min-height:65px" placeholder='e.g. "Entry-level or internship OK. Prefer mentorship. AI/ML and backend focus."'></textarea>
+        <button class="btn btn-primary" style="margin-top:7px" onclick="saveContext()">Save Context</button>
+      </div>
     </div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="page" id="page-settings">
+    <div class="page-title">Settings</div>
+    <div class="page-sub">API keys shared across accounts. Locations per-account.</div>
     <div class="settings-grid">
-      <div class="settings-card">
-        <h3>API Keys</h3>
-        <div class="form-group">
-          <label class="form-label">OpenAI API Key (Purdue)</label>
-          <input class="form-input" type="password" id="openai_key" placeholder="sk-...">
-        </div>
-        <div class="form-group">
-          <label class="form-label">JSearch API Key (RapidAPI)</label>
-          <input class="form-input" type="password" id="jsearch_key" placeholder="Your RapidAPI key">
-        </div>
-        <button class="btn btn-primary" onclick="saveSettings()">Save Keys</button>
-      </div>
-      <div class="settings-card">
-        <h3>Auto-Scrape</h3>
-        <div class="toggle-row">
-          <span class="toggle-label">Enable auto-scrape</span>
-          <label class="toggle"><input type="checkbox" id="auto_scrape"><span class="toggle-slider"></span></label>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Interval (hours)</label>
-          <input class="form-input" type="number" id="scrape_interval_hours" value="24" min="1" max="168">
-        </div>
-        <p style="font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:14px">
-          Auto-scrape runs in the background. For a proper cron job, add this to your crontab:<br>
-          <code style="color:var(--accent)">0 8 * * * curl -X POST http://localhost:5000/api/scrape</code>
+
+      <div class="s-card">
+        <h3>Free Sources <span class="badge">No key needed</span></h3>
+        <p style="font-size:10px;color:var(--muted);line-height:1.7;margin-bottom:9px">
+          These run automatically every scrape — zero setup required:
         </p>
-        <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
+        <div style="display:flex;flex-direction:column;gap:5px">
+          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--rs);padding:7px 10px">
+            <div style="font-size:11px;font-weight:600;color:var(--text);font-family:'Syne',sans-serif">⬡ The Muse</div>
+            <div style="font-size:9px;color:var(--muted);margin-top:2px">Tech/startup focus · 500 req/hr · no key</div>
+          </div>
+          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--rs);padding:7px 10px">
+            <div style="font-size:11px;font-weight:600;color:var(--text);font-family:'Syne',sans-serif">🌐 Remotive</div>
+            <div style="font-size:9px;color:var(--muted);margin-top:2px">Remote-only tech jobs · no key</div>
+          </div>
+          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--rs);padding:7px 10px">
+            <div style="font-size:11px;font-weight:600;color:var(--text);font-family:'Syne',sans-serif">🏢 Greenhouse Boards</div>
+            <div style="font-size:9px;color:var(--muted);margin-top:2px">28 company career pages · no key · not rate-limited</div>
+          </div>
+        </div>
       </div>
-      <div class="settings-card" style="grid-column: 1/-1">
-        <h3>Getting Your JSearch API Key</h3>
-        <p style="font-size:13px;color:var(--muted);line-height:1.6">
-          1. Go to <a href="https://rapidapi.com/letscrape-6bRBa3QguO5/api/jsearch" target="_blank" style="color:var(--accent2)">RapidAPI JSearch</a><br>
-          2. Sign up / log in → click "Subscribe to Test" → choose the <strong style="color:var(--text)">Free plan</strong> (200 requests/month)<br>
-          3. Copy your X-RapidAPI-Key from the header params section<br><br>
-          For Purdue's OpenAI key, visit the Purdue GenAI program portal and generate an API key there. Use it exactly like a standard OpenAI key.
-        </p>
+
+      <div class="s-card">
+        <h3>USAJobs <span class="badge">Free · email signup</span></h3>
+        <p style="font-size:10px;color:var(--muted);margin-bottom:9px">Federal government jobs. Register free (name + email) at <a href="https://developer.usajobs.gov/apirequest" target="_blank" style="color:var(--accent2)">developer.usajobs.gov</a> — instant approval.</p>
+        <div class="form-group">
+          <label class="form-label">API Key</label>
+          <input class="form-input" type="password" id="usajobs_key" placeholder="(enter to set)">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Your Email (User-Agent header)</label>
+          <input class="form-input" type="email" id="usajobs_email" placeholder="you@example.com">
+          <div style="font-size:9px;color:var(--muted);margin-top:2px">USAJobs requires your email as User-Agent — not stored elsewhere</div>
+        </div>
       </div>
+
+      <div class="s-card">
+        <h3>JSearch API <span class="badge" style="background:rgba(251,191,36,.15);color:var(--warn)">200/month</span></h3>
+        <p style="font-size:10px;color:var(--muted);margin-bottom:9px">Optional. Used only for Indiana company boards (Rolls-Royce, Cummins, etc.) that aren't on Greenhouse. <a href="https://rapidapi.com/letscrape-6bRBa3QguO5/api/jsearch" target="_blank" style="color:var(--accent2)">Get key →</a></p>
+        <div class="form-group">
+          <label class="form-label">RapidAPI Key</label>
+          <input class="form-input" type="password" id="jsearch_key" placeholder="(enter to set)">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Monthly Limit</label>
+          <input class="form-input" type="number" id="jsearch_monthly_limit" value="200">
+        </div>
+      </div>
+
+      <div class="s-card">
+        <h3>Purdue GenAI</h3>
+        <div class="form-group">
+          <label class="form-label">API Key</label>
+          <input class="form-input" type="password" id="purdue_api_key" placeholder="(enter to set)">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Model</label>
+          <input class="form-input" type="text" id="purdue_api_model">
+          <div style="font-size:9px;color:var(--muted);margin-top:2px">Recommended: gpt-oss:120b</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">API URL</label>
+          <input class="form-input" type="text" id="purdue_api_url">
+        </div>
+      </div>
+
+      <div class="s-card">
+        <h3>Search Locations</h3>
+        <div class="loc-list" id="locList"></div>
+        <div class="form-row" style="margin-bottom:7px">
+          <div class="form-group"><label class="form-label">City</label><input class="form-input" id="locCity" placeholder="Bloomington"></div>
+          <div class="form-group" style="width:52px"><label class="form-label">State</label><input class="form-input" id="locState" placeholder="IN" maxlength="2"></div>
+          <div class="form-group" style="width:62px"><label class="form-label">Radius</label><input class="form-input" id="locRadius" type="number" value="30" min="5" max="100"></div>
+        </div>
+        <button class="btn btn-ghost" onclick="addLocation()">+ Add Location</button>
+      </div>
+
+      <!-- GOOGLE SHEETS PANEL -->
+      <div class="s-card full">
+        <h3>Google Sheets Sync <span class="badge" style="background:rgba(74,222,128,.15);color:var(--sheets)">Two-way</span></h3>
+        <div class="sheets-panel">
+          <div class="sheets-status-row">
+            <div class="sheets-status-indicator" id="settingsSheetsDot"></div>
+            <span style="font-size:12px;font-weight:600" id="settingsSheetsStatus">Not configured</span>
+            <button class="btn btn-ghost" style="margin-left:auto;font-size:10px" onclick="verifySheets()" id="verifyBtn">Test Connection</button>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div>
+              <div class="form-group">
+                <label class="form-label">Sheet ID</label>
+                <input class="form-input" type="text" id="sheets_id" placeholder="10I4nyW73h0Rigb2xVwF-k1aTs...">
+                <div style="font-size:9px;color:var(--muted);margin-top:2px">The long ID from your sheet URL</div>
+              </div>
+              <div class="form-group">
+                <label class="form-label" style="display:flex;align-items:center;gap:6px;cursor:pointer">
+                  <input type="checkbox" id="sheets_auto_sync" style="accent-color:var(--accent)">
+                  Auto-push status changes to sheet
+                </label>
+              </div>
+            </div>
+            <div>
+              <label class="form-label">Service Account JSON</label>
+              <div class="upload-zone" id="credsUploadZone">
+                <input type="file" accept=".json" onchange="uploadCreds(this)">
+                <div id="credsZoneContent">
+                  <div style="font-size:12px;font-family:'Syne',sans-serif;font-weight:600;margin-bottom:3px">📋 Upload credentials.json</div>
+                  <div style="font-size:10px;color:var(--muted)">Service account key from Google Cloud Console</div>
+                </div>
+              </div>
+              <div style="font-size:9px;color:var(--muted);margin-top:4px" id="serviceAccountEmail"></div>
+            </div>
+          </div>
+
+          <div class="sheets-sync-row">
+            <button class="btn btn-ghost sheets" onclick="syncFromSheet()">↓ Pull from Sheet</button>
+            <button class="btn btn-ghost sheets" onclick="syncToSheet()">↑ Push to Sheet</button>
+            <button class="btn btn-ghost" style="font-size:10px" onclick="showPage('log',null)">View sync log →</button>
+          </div>
+
+          <div style="margin-top:12px;padding:10px;background:var(--surface2);border-radius:var(--rs)">
+            <div style="font-size:10px;font-family:'Syne',sans-serif;font-weight:700;margin-bottom:5px;color:var(--text)">Setup Instructions (5 min)</div>
+            <ol style="font-size:10px;color:var(--muted);padding-left:14px;line-height:2">
+              <li>Go to <a href="https://console.cloud.google.com" target="_blank" style="color:var(--accent2)">console.cloud.google.com</a> → create or select a project</li>
+              <li>Search "Google Sheets API" → Enable it</li>
+              <li>IAM & Admin → Service Accounts → Create Service Account (any name)</li>
+              <li>Click the service account → Keys → Add Key → JSON → Download</li>
+              <li>Upload that JSON file above</li>
+              <li>Copy the service account email shown below the upload</li>
+              <li>Open your Google Sheet → Share → paste email → Editor access</li>
+              <li>Paste your Sheet ID above and click Test Connection</li>
+            </ol>
+          </div>
+
+          <div id="sheetsSyncHistory" class="sheets-sync-history"></div>
+        </div>
+      </div>
+
+      <div style="grid-column:1/-1;display:flex;gap:8px;align-items:center">
+        <button class="btn btn-primary" onclick="saveSettings()">Save All Settings</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- LOG -->
+  <div class="page" id="page-log">
+    <div class="page-title">Scrape & Sync Log</div>
+    <div class="page-sub">Live output during scraping, plus history.</div>
+    <div style="display:flex;gap:7px;margin-bottom:9px;flex-wrap:wrap">
+      <button class="btn btn-ghost" onclick="rescoreUnscored()" id="rescoreBtn">Re-score unscored jobs</button>
+      <button class="btn btn-ghost sheets" onclick="syncFromSheet()">↓ Sync from Sheet</button>
+      <button class="btn btn-ghost sheets" onclick="syncToSheet()">↑ Sync to Sheet</button>
+    </div>
+    <div class="log-container" id="logContainer"><div style="color:var(--muted)">No active scrape.</div></div>
+    <div style="margin-top:14px">
+      <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:8px">Scrape History</div>
+      <div id="logHistory"></div>
+      <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin:14px 0 8px">Sheets Sync History</div>
+      <div id="sheetsSyncLog"></div>
     </div>
   </div>
 </main>
 
-<!-- SCRAPE STATUS OVERLAY -->
 <div class="scrape-overlay" id="scrapeOverlay">
-  <div class="scrape-overlay-title">
-    <span class="spinner"></span>
-    Scraping in progress
-  </div>
-  <div class="scrape-overlay-msg" id="scrapeMsg">Starting...</div>
+  <div class="scrape-overlay-title"><span class="spinner"></span><span id="overlayTitle">Scraping…</span></div>
+  <div class="scrape-overlay-msg" id="scrapeMsg">Starting…</div>
 </div>
 
-<!-- JOB DETAIL MODAL -->
 <div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
-  <div class="modal" id="modal">
+  <div class="modal">
     <div class="modal-title" id="modalTitle"></div>
-    <div class="modal-company" id="modalCompany"></div>
-    <div id="modalMeta" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px"></div>
+    <div class="modal-co" id="modalCo"></div>
+    <div id="modalMeta" style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:11px"></div>
     <div class="modal-desc" id="modalDesc"></div>
-    <div style="margin-top:20px;display:flex;gap:8px">
-      <a class="btn btn-primary" id="modalApply" href="#" target="_blank">Apply Now ↗</a>
+    <div class="modal-footer">
+      <a class="btn btn-primary" id="modalApply" href="#" target="_blank">Apply ↗</a>
       <a class="btn btn-ghost" id="modalCompanyLink" href="#" target="_blank">Company Site</a>
       <button class="btn btn-ghost" onclick="closeModal()">Close</button>
     </div>
   </div>
 </div>
 
+<div class="toast" id="toast"></div>
+
 <script>
-let allJobs = [];
-let map = null;
-let mapMarkers = [];
-let currentPage = 'jobs';
+let allJobs=[], savedJobs=[], currentUser=null, map=null, mapMarkers=[];
+let activeTrackerFilter='', sheetsConfigured=false;
 
-// ─── Navigation ──────────────────────────────────────────────
-function showPage(page) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  document.getElementById('page-' + page).classList.add('active');
-  event.currentTarget.classList.add('active');
-  currentPage = page;
-  if (page === 'map') initMap();
-  if (page === 'saved') renderSaved();
-  if (page === 'log') loadLog();
-  if (page === 'settings') loadSettings();
+const STATUS_LABELS={none:'No Status',interested:'⭐ Interested',applied:'📨 Applied',interview:'🎤 Interview',offer:'🎉 Offer',rejected:'❌ Rejected'};
+const STATUS_COLORS={none:'var(--muted)',interested:'var(--info)',applied:'var(--accent2)',interview:'var(--warn)',offer:'var(--accent)',rejected:'var(--danger)'};
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function toast(msg,type='ok'){const t=document.getElementById('toast');t.textContent=msg;t.className='toast '+type+' show';setTimeout(()=>t.className='toast',3000);}
+async function api(path,opts={}){const r=await fetch(path,{headers:{'Content-Type':'application/json'},...opts});return r.json();}
+
+// ─── AUTH ─────────────────────────────────────────────────────────────────────
+async function checkLogin(){
+  const me=await api('/api/me');
+  if(me.logged_in)showApp(me); else showLogin();
+}
+function showLogin(){
+  document.getElementById('loginScreen').style.display='flex';
+  document.getElementById('appSidebar').style.display='none';
+  document.getElementById('appMain').style.display='none';
+  setTimeout(()=>document.getElementById('loginInput').focus(),100);
+}
+function showApp(user){
+  currentUser=user;
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('appSidebar').style.display='flex';
+  document.getElementById('appMain').style.display='block';
+  document.getElementById('userNameLabel').textContent=user.username;
+  document.getElementById('userAvatar').textContent=user.username[0].toUpperCase();
+  if(user.has_resume){
+    document.getElementById('resumeBox').classList.add('has-resume');
+    document.getElementById('resumeBoxContent').innerHTML=`<h4>✓ ${esc(user.resume_filename)}</h4><p>Click to replace</p>`;
+  }
+  if(user.ai_context){document.getElementById('profileContext').value=user.ai_context;document.getElementById('advisorContext').value=user.ai_context;}
+  loadJobs(); loadSettings(); loadLocations(); loadStats();
+}
+async function doLogin(){
+  const u=document.getElementById('loginInput').value.trim();
+  if(!u){toast('Enter a username','err');return;}
+  const r=await api('/api/login',{method:'POST',body:JSON.stringify({username:u})});
+  if(r.ok)checkLogin(); else toast(r.msg,'err');
+}
+async function doLogout(){
+  await api('/api/logout',{method:'POST'});
+  currentUser=null;allJobs=[];savedJobs=[];showLogin();
+  document.getElementById('loginInput').value='';
 }
 
-// ─── Jobs ─────────────────────────────────────────────────────
-async function loadJobs() {
-  const params = buildParams();
-  const resp = await fetch('/api/jobs?' + params);
-  allJobs = await resp.json();
-  renderJobs(allJobs, 'jobsGrid');
-  document.getElementById('jobsCount').textContent = `${allJobs.length} listings`;
-  loadStats();
+// ─── NAV ──────────────────────────────────────────────────────────────────────
+function showPage(page,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  if(el)el.classList.add('active');
+  if(page==='map')initMap();
+  if(page==='saved')loadSaved();
+  if(page==='tracker')loadTracker();
+  if(page==='log'){loadLog();loadSheetsSyncLog();}
+  if(page==='settings'){loadSettings();loadLocations();loadSheetsSyncHistory();}
 }
 
-function buildParams() {
-  const search = document.getElementById('searchInput').value;
-  const workType = document.getElementById('workTypeFilter').value;
-  const sort = document.getElementById('sortFilter').value;
-  const minScore = document.getElementById('scoreSlider').value;
-  const p = new URLSearchParams();
-  if (search) p.set('search', search);
-  if (workType) p.set('work_type', workType);
-  p.set('sort', sort);
-  p.set('min_score', minScore);
-  return p.toString();
+// ─── JOBS ─────────────────────────────────────────────────────────────────────
+async function loadJobs(){
+  const p=new URLSearchParams({
+    search:document.getElementById('searchInput').value,
+    work_type:document.getElementById('workTypeFilter').value,
+    sort:document.getElementById('sortFilter').value,
+    min_score:document.getElementById('scoreSlider').value,
+    hide_unscored:document.getElementById('hideUnscoredCb').checked?'1':'0',
+    source:document.getElementById('sourceFilter').value,
+  });
+  const r=await fetch('/api/jobs?'+p);
+  allJobs=await r.json();
+  renderJobs(allJobs,'jobsGrid');
+  document.getElementById('jobsCount').textContent=`${allJobs.length} listings`;
 }
+function filterJobs(){loadJobs();}
 
-function filterJobs() { loadJobs(); }
-
-function updateScoreLabel() {
-  document.getElementById('scoreLabel').textContent = document.getElementById('scoreSlider').value + '%';
-}
-
-function renderJobs(jobs, gridId) {
-  const grid = document.getElementById(gridId);
-  if (!jobs.length) {
-    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
-      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-      <h3>No jobs found</h3>
-      <p>Try adjusting your filters or run a new scrape.</p>
-    </div>`;
+function renderJobs(jobs,gridId){
+  const g=document.getElementById(gridId);
+  if(!jobs.length){
+    g.innerHTML=`<div class="empty"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><h3>No jobs found</h3><p>Adjust filters or run a scrape.</p></div>`;
     return;
   }
-  grid.innerHTML = jobs.map(job => jobCard(job)).join('');
+  g.innerHTML=jobs.map(j=>jobCard(j)).join('');
 }
 
-function jobCard(job) {
-  const score = job.match_score || 0;
-  const scoreClass = score >= 70 ? 'score-high' : score >= 45 ? 'score-mid' : 'score-low';
-  const wtClass = job.work_type === 'Remote' ? 'remote' : job.work_type === 'Hybrid' ? 'hybrid' : '';
+function scoreClass(s){return s<0?'su':s>=70?'sh':s>=45?'sm':'sl2';}
+function scoreDisplay(s){return s<0?'?':s;}
 
-  const dateStr = job.date_found ? new Date(job.date_found).toLocaleDateString('en-US', {month:'short', day:'numeric'}) : '';
-
-  return `<div class="job-card ${job.saved ? 'saved' : ''}" id="card-${job.id}">
-  <div class="card-top">
-    <div>
-      <div class="card-company">${esc(job.company)}</div>
-      <div class="card-title">${esc(job.title)}</div>
-    </div>
-    <div class="score-badge ${scoreClass}">
-      ${score}<div class="score-label">match</div>
-    </div>
+function jobCard(job){
+  const s=job.match_score;
+  const wc=job.work_type==='Remote'?'remote':job.work_type==='Hybrid'?'hybrid':'';
+  const dt=job.date_found?new Date(job.date_found).toLocaleDateString('en-US',{month:'short',day:'numeric'}):'';
+  const isSheets=job.source==='Sheets Import';
+  const statusColor=STATUS_COLORS[job.app_status]||STATUS_COLORS.none;
+  return `<div class="job-card${job.saved?' saved':''}${job.is_new?' is-new':''}${isSheets?' from-sheets':''}" id="card-${job.id}" onclick="markSeen(${job.id})">
+<div class="card-top">
+  <div class="card-info">
+    <div class="card-co">${esc(job.company)}</div>
+    <div class="card-title">${esc(job.title)}</div>
   </div>
-  <div class="card-meta">
-    ${job.work_type ? `<span class="meta-tag ${wtClass}">⬡ ${job.work_type}</span>` : ''}
-    ${job.location ? `<span class="meta-tag">📍 ${esc(job.location)}</span>` : ''}
-    ${job.salary_display ? `<span class="meta-tag salary">💰 ${esc(job.salary_display)}</span>` : ''}
-    ${job.source ? `<span class="meta-tag">${esc(job.source)}</span>` : ''}
-  </div>
-  ${job.match_reasons ? `<div class="card-reasons">${esc(job.match_reasons)}</div>` : ''}
-  <div class="card-actions">
-    ${job.apply_url ? `<a class="btn btn-primary" href="${esc(job.apply_url)}" target="_blank">Apply ↗</a>` : ''}
-    <button class="btn btn-ghost" onclick="showDetail(${job.id})">Details</button>
-    <button class="btn btn-ghost ${job.saved ? 'active' : ''}" onclick="toggleSave(${job.id}, this)" title="Save">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="${job.saved ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
-    </button>
-    <button class="btn btn-icon" onclick="hideJob(${job.id})" title="Hide">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-    </button>
-    <span class="card-date">${dateStr}</span>
-  </div>
+  <div class="score-badge ${scoreClass(s)}">${scoreDisplay(s)}<div class="sl">match</div></div>
+</div>
+<div class="card-meta">
+  ${job.work_type?`<span class="tag ${wc}">${esc(job.work_type)}</span>`:''}
+  ${job.location?`<span class="tag">📍 ${esc(job.location)}</span>`:''}
+  ${job.salary_display?`<span class="tag sal">💰 ${esc(job.salary_display)}</span>`:''}
+  ${isSheets?`<span class="tag sheets-tag">📊 Sheets</span>`:`<span class="tag">${esc(job.source||'')}</span>`}
+  ${job.app_status&&job.app_status!=='none'?`<span class="tag" style="border-color:${statusColor};color:${statusColor}">${STATUS_LABELS[job.app_status]}</span>`:''}
+</div>
+${job.match_reasons&&s>=0?`<div class="card-reasons">${esc(job.match_reasons)}</div>`:''}
+<div class="card-actions">
+  ${job.apply_url?`<a class="btn btn-primary" href="${esc(job.apply_url)}" target="_blank" onclick="event.stopPropagation()">Apply ↗</a>`:''}
+  <button class="btn btn-ghost" onclick="event.stopPropagation();showDetail(${job.id})">Details</button>
+  <button class="btn btn-ghost${job.saved?' on':''}" onclick="event.stopPropagation();toggleSave(${job.id})" title="Save">
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="${job.saved?'currentColor':'none'}" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+  </button>
+  <button class="btn btn-icon" onclick="event.stopPropagation();hideJob(${job.id})" title="Hide">
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="1" y1="1" x2="23" y2="23"/><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/></svg>
+  </button>
+  <span class="card-date">${dt}</span>
+</div>
+<select class="status-select ${job.app_status||'none'}" onchange="event.stopPropagation();setStatus(${job.id},this)" style="margin-top:5px">
+  <option value="none" ${!job.app_status||job.app_status==='none'?'selected':''}>No Status</option>
+  <option value="interested" ${job.app_status==='interested'?'selected':''}>⭐ Interested</option>
+  <option value="applied" ${job.app_status==='applied'?'selected':''}>📨 Applied</option>
+  <option value="interview" ${job.app_status==='interview'?'selected':''}>🎤 Interview</option>
+  <option value="offer" ${job.app_status==='offer'?'selected':''}>🎉 Offer</option>
+  <option value="rejected" ${job.app_status==='rejected'?'selected':''}>❌ Rejected</option>
+</select>
+<textarea class="card-notes" placeholder="Notes…" onchange="event.stopPropagation();saveNotes(${job.id},this)" onclick="event.stopPropagation()">${esc(job.notes||'')}</textarea>
 </div>`;
 }
 
-function esc(str) {
-  if (!str) return '';
-  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+async function markSeen(id){
+  const job=findJob(id);
+  if(job&&job.is_new){job.is_new=0;document.getElementById('card-'+id)?.classList.remove('is-new');await api(`/api/jobs/${id}/mark_seen`,{method:'POST'});}
+}
+function findJob(id){return allJobs.find(j=>j.id===id)||savedJobs.find(j=>j.id===id);}
+
+async function loadSaved(){
+  const r=await fetch('/api/jobs?saved=1&sort=match_score');
+  savedJobs=await r.json();
+  renderJobs(savedJobs,'savedGrid');
+  document.getElementById('savedCount').textContent=`${savedJobs.length} saved`;
 }
 
-async function toggleSave(id, btn) {
-  const job = allJobs.find(j => j.id === id);
-  if (!job) return;
-  const newSaved = !job.saved;
-  await fetch(`/api/jobs/${id}/save`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({saved: newSaved})});
-  job.saved = newSaved ? 1 : 0;
-  // Re-render card
-  const card = document.getElementById('card-' + id);
-  if (card) card.outerHTML = jobCard(job);
+async function loadTracker(){
+  const s=await api('/api/stats');
+  const sc=s.status_counts||{};
+  const chips=[
+    {k:'',label:'All',count:s.total},
+    {k:'interested',label:'⭐ Interested',count:sc.interested||0},
+    {k:'applied',label:'📨 Applied',count:sc.applied||0},
+    {k:'interview',label:'🎤 Interview',count:sc.interview||0},
+    {k:'offer',label:'🎉 Offer',count:sc.offer||0},
+    {k:'rejected',label:'❌ Rejected',count:sc.rejected||0},
+  ];
+  document.getElementById('statusOverview').innerHTML=chips.map(c=>
+    `<div class="status-chip${activeTrackerFilter===c.k?' active-filter':''}" onclick="setTrackerFilter('${c.k}')">
+      <span class="sc-count">${c.count}</span>${c.label}</div>`
+  ).join('');
+  const params=activeTrackerFilter?`&app_status=${activeTrackerFilter}`:'';
+  const jobs=await fetch('/api/jobs?sort=match_score'+params).then(r=>r.json());
+  renderJobs(jobs,'trackerGrid');
+}
+function setTrackerFilter(k){activeTrackerFilter=k;loadTracker();}
+
+async function toggleSave(id){
+  const job=findJob(id);if(!job)return;
+  job.saved=job.saved?0:1;
+  await api(`/api/jobs/${id}/save`,{method:'POST',body:JSON.stringify({saved:!!job.saved})});
+  const el=document.getElementById('card-'+id);
+  if(el)el.className=el.className.replace(/\bsaved\b/,'').trim()+(job.saved?' saved':'');
   loadStats();
 }
 
-async function hideJob(id) {
-  await fetch(`/api/jobs/${id}/hide`, {method:'POST'});
-  document.getElementById('card-' + id)?.remove();
-  allJobs = allJobs.filter(j => j.id !== id);
-  document.getElementById('jobsCount').textContent = `${allJobs.length} listings`;
+async function hideJob(id){
+  await api(`/api/jobs/${id}/hide`,{method:'POST'});
+  document.getElementById('card-'+id)?.remove();
+  allJobs=allJobs.filter(j=>j.id!==id);
+  document.getElementById('jobsCount').textContent=`${allJobs.length} listings`;
 }
 
-function showDetail(id) {
-  const job = allJobs.find(j => j.id === id) || savedJobs?.find(j => j.id === id);
-  if (!job) return;
-  document.getElementById('modalTitle').textContent = job.title;
-  document.getElementById('modalCompany').textContent = job.company + (job.location ? ' · ' + job.location : '');
-  document.getElementById('modalMeta').innerHTML = `
-    ${job.work_type ? `<span class="meta-tag ${job.work_type==='Remote'?'remote':job.work_type==='Hybrid'?'hybrid':''}">${job.work_type}</span>` : ''}
-    ${job.salary_display ? `<span class="meta-tag salary">${job.salary_display}</span>` : ''}
-    <span class="meta-tag score-${job.match_score>=70?'high':job.match_score>=45?'mid':'low'}" style="font-weight:700">Match: ${job.match_score}%</span>
+async function setStatus(id,sel){
+  sel.className='status-select '+sel.value;
+  await api(`/api/jobs/${id}/status`,{method:'POST',body:JSON.stringify({status:sel.value})});
+  const job=findJob(id);if(job)job.app_status=sel.value;
+}
+
+let notesTimers={};
+function saveNotes(id,el){
+  clearTimeout(notesTimers[id]);
+  notesTimers[id]=setTimeout(async()=>{
+    await api(`/api/jobs/${id}/notes`,{method:'POST',body:JSON.stringify({notes:el.value})});
+    const job=findJob(id);if(job)job.notes=el.value;
+  },800);
+}
+
+async function loadStats(){
+  const s=await api('/api/stats');
+  document.getElementById('statTotal').textContent=s.total;
+  document.getElementById('statSaved').textContent=s.saved;
+  const up=document.getElementById('unscoredPill');
+  if(s.unscored>0){document.getElementById('statUnscored').textContent=s.unscored;up.style.display='';}
+  else up.style.display='none';
+  if(s.new_count>0){
+    document.getElementById('scrapeBanner').classList.remove('hidden');
+    document.getElementById('bannerCount').textContent=s.new_count+' new';
+    const nb=document.getElementById('newBadge');nb.textContent=s.new_count;nb.style.display='';
+  } else document.getElementById('newBadge').style.display='none';
+
+  // API usage — JSearch only (others are free/unlimited)
+  if(s.api_usage){
+    const u=s.api_usage;
+    document.getElementById('jsText').textContent=`${u.jsearch_used}/${u.jsearch_limit}`;
+    const jb=document.getElementById('jsBar');
+    jb.style.width=u.jsearch_pct+'%';
+    jb.className='usage-fill '+(u.jsearch_pct>=90?'red':u.jsearch_pct>=70?'yellow':'green');
+    document.getElementById('jsSub').textContent=`${u.jsearch_remaining} calls left · company boards only`;
+  }
+
+  // Sheets status
+  sheetsConfigured=s.sheets_configured;
+  const dot=document.getElementById('sheetsDot');
+  const stxt=document.getElementById('sheetsStatusText');
+  const btns=document.getElementById('sheetsSyncBtns');
+  if(sheetsConfigured){
+    dot.classList.add('connected');
+    stxt.textContent='Sheets connected';
+    btns.style.display='flex';
+  } else {
+    dot.classList.remove('connected');
+    stxt.textContent='Sheets not configured';
+    btns.style.display='none';
+  }
+}
+
+function dismissBanner(id){document.getElementById(id).classList.add('hidden');}
+
+// ─── DETAIL MODAL ─────────────────────────────────────────────────────────────
+function showDetail(id){
+  const job=findJob(id);if(!job)return;
+  const s=job.match_score;
+  document.getElementById('modalTitle').textContent=job.title;
+  document.getElementById('modalCo').textContent=(job.company||'')+(job.location?' · '+job.location:'');
+  document.getElementById('modalMeta').innerHTML=`
+    ${job.work_type?`<span class="tag ${job.work_type==='Remote'?'remote':job.work_type==='Hybrid'?'hybrid':''}">${job.work_type}</span>`:''}
+    ${job.salary_display?`<span class="tag sal">${esc(job.salary_display)}</span>`:''}
+    <span class="tag ${scoreClass(s)}" style="font-weight:700">Match: ${scoreDisplay(s)}%</span>
+    ${job.source?`<span class="tag">${esc(job.source)}</span>`:''}
+    ${job.date_posted?`<span class="tag">Posted: ${new Date(job.date_posted).toLocaleDateString()}</span>`:''}
   `;
-  document.getElementById('modalDesc').textContent = job.description || 'No description available.';
-  document.getElementById('modalApply').href = job.apply_url || '#';
-  document.getElementById('modalCompanyLink').href = job.company_url || job.apply_url || '#';
+  document.getElementById('modalDesc').textContent=job.description||'No description available.';
+  document.getElementById('modalApply').href=job.apply_url||'#';
+  document.getElementById('modalCompanyLink').href=job.company_url||job.apply_url||'#';
   document.getElementById('modalOverlay').classList.add('open');
 }
+function closeModal(e){if(!e||e.target===document.getElementById('modalOverlay'))document.getElementById('modalOverlay').classList.remove('open');}
 
-function closeModal(e) {
-  if (!e || e.target === document.getElementById('modalOverlay')) {
-    document.getElementById('modalOverlay').classList.remove('open');
+// ─── MAP ──────────────────────────────────────────────────────────────────────
+async function initMap(){
+  if(!map){
+    map=L.map('map').setView([39.9,-86.2],8);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OSM'}).addTo(map);
   }
-}
-
-// ─── Saved ────────────────────────────────────────────────────
-let savedJobs = [];
-async function renderSaved() {
-  const resp = await fetch('/api/jobs?saved=1&sort=match_score');
-  savedJobs = await resp.json();
-  renderJobs(savedJobs, 'savedGrid');
-  document.getElementById('savedCount').textContent = `${savedJobs.length} saved`;
-}
-
-// ─── Stats ────────────────────────────────────────────────────
-async function loadStats() {
-  const resp = await fetch('/api/stats');
-  const stats = await resp.json();
-  document.getElementById('statTotal').textContent = stats.total;
-  document.getElementById('statSaved').textContent = stats.saved;
-  if (stats.last_scrape) {
-    document.getElementById('lastScrapeInfo').textContent = 'Last scrape: ' + new Date(stats.last_scrape).toLocaleString();
-  }
-}
-
-// ─── MAP ──────────────────────────────────────────────────────
-async function initMap() {
-  if (!map) {
-    map = L.map('map').setView([39.9, -86.2], 7); // Center on Indiana
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap'
-    }).addTo(map);
-  }
-  // Clear old markers
-  mapMarkers.forEach(m => map.removeLayer(m));
-  mapMarkers = [];
-
-  const resp = await fetch('/api/jobs?min_score=0');
-  const jobs = await resp.json();
-
-  jobs.forEach(job => {
-    if (!job.lat || !job.lng) return;
-    const score = job.match_score || 0;
-    const color = score >= 70 ? '#6ee7b7' : score >= 45 ? '#fbbf24' : '#f87171';
-    const marker = L.circleMarker([job.lat, job.lng], {
-      radius: 8,
-      fillColor: color,
-      color: '#0a0c10',
-      weight: 2,
-      opacity: 1,
-      fillOpacity: 0.85
-    }).addTo(map);
-    marker.bindPopup(`
-      <b style="font-family:sans-serif">${job.title}</b><br>
-      ${job.company}<br>
-      <small>${job.location}</small><br>
-      <b style="color:${color}">Match: ${score}%</b><br>
-      ${job.salary_display ? `💰 ${job.salary_display}<br>` : ''}
-      ${job.apply_url ? `<a href="${job.apply_url}" target="_blank">Apply ↗</a>` : ''}
-    `);
-    mapMarkers.push(marker);
+  mapMarkers.forEach(m=>map.removeLayer(m));mapMarkers=[];
+  const jobs=await api('/api/jobs?min_score=0');
+  jobs.forEach(job=>{
+    if(!job.lat||!job.lng)return;
+    const s=job.match_score||0;
+    const color=s<0?'#71717a':s>=70?'#34d399':s>=45?'#fbbf24':'#f87171';
+    const m=L.circleMarker([job.lat,job.lng],{radius:7,fillColor:color,color:'#09090b',weight:2,opacity:1,fillOpacity:.85}).addTo(map);
+    m.bindPopup(`<b>${job.title}</b><br>${job.company}<br><small>${job.location}</small><br><b style="color:${color}">Match: ${scoreDisplay(s)}%</b>${job.salary_display?'<br>💰 '+job.salary_display:''}${job.apply_url?'<br><a href="'+job.apply_url+'" target="_blank">Apply ↗</a>':''}`);
+    mapMarkers.push(m);
   });
 }
 
-// ─── Scrape ───────────────────────────────────────────────────
-async function triggerScrape() {
-  const btn = document.getElementById('scrapeBtn');
-  btn.disabled = true;
-  const resp = await fetch('/api/scrape', {method:'POST'});
-  const data = await resp.json();
-  if (!data.ok) {
-    alert(data.msg);
-    btn.disabled = false;
-    return;
-  }
+// ─── SCRAPE ───────────────────────────────────────────────────────────────────
+async function triggerScrape(){
+  const btn=document.getElementById('scrapeBtn');btn.disabled=true;
+  const r=await api('/api/scrape',{method:'POST'});
+  if(!r.ok){toast(r.msg,'err');btn.disabled=false;return;}
   btn.classList.add('running');
-  btn.innerHTML = `<span class="spinner"></span> Running...`;
+  btn.innerHTML='<span class="spinner"></span> Running…';
+  document.getElementById('overlayTitle').textContent='Scraping…';
+  document.getElementById('scrapeOverlay').classList.add('visible');
+  pollScrape();
+}
+let pollTimer=null;
+function pollScrape(){
+  if(pollTimer)clearTimeout(pollTimer);
+  pollTimer=setTimeout(async()=>{
+    const d=await api('/api/scrape/status');
+    document.getElementById('scrapeMsg').textContent=d.progress||'…';
+    if(document.getElementById('page-log').classList.contains('active')){
+      const lc=document.getElementById('logContainer');
+      if(d.log&&d.log.length)lc.innerHTML=d.log.map(l=>`<div class="log-line">${esc(l)}</div>`).join('');
+      lc.scrollTop=lc.scrollHeight;
+    }
+    if(d.running){pollScrape();}
+    else{
+      const btn=document.getElementById('scrapeBtn');
+      btn.disabled=false;btn.classList.remove('running');
+      btn.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg> Scrape Now';
+      document.getElementById('scrapeOverlay').classList.remove('visible');
+      toast('Scrape complete!');
+      loadJobs();loadStats();
+    }
+  },2500);
+}
+
+async function rescoreUnscored(){
+  const btn=document.getElementById('rescoreBtn');if(btn)btn.disabled=true;
+  const r=await api('/api/jobs/rescore',{method:'POST',body:JSON.stringify({})});
+  if(!r.ok){toast(r.msg,'err');if(btn)btn.disabled=false;return;}
+  toast(`Rescoring ${r.count} jobs…`);
+  document.getElementById('overlayTitle').textContent='Rescoring…';
   document.getElementById('scrapeOverlay').classList.add('visible');
   pollScrape();
 }
 
-let pollTimer = null;
-function pollScrape() {
-  if (pollTimer) clearTimeout(pollTimer);
-  pollTimer = setTimeout(async () => {
-    const resp = await fetch('/api/scrape/status');
-    const data = await resp.json();
-    document.getElementById('scrapeMsg').textContent = data.progress || '...';
-    if (currentPage === 'log') {
-      const log = document.getElementById('logContainer');
-      log.innerHTML = data.log.map(l => `<div class="log-line">${l}</div>`).join('');
-      log.scrollTop = log.scrollHeight;
-    }
-    if (data.running) {
-      pollScrape();
-    } else {
-      const btn = document.getElementById('scrapeBtn');
-      btn.disabled = false;
-      btn.classList.remove('running');
-      btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg> Scrape Now`;
-      document.getElementById('scrapeOverlay').classList.remove('visible');
-      loadJobs();
-    }
-  }, 2000);
-}
+function exportJobs(savedOnly){window.location.href='/api/jobs/export'+(savedOnly?'?saved_only=1':'');}
 
-// ─── Log ──────────────────────────────────────────────────────
-async function loadLog() {
-  const resp = await fetch('/api/scrape/status');
-  const data = await resp.json();
-  if (data.log && data.log.length) {
-    document.getElementById('logContainer').innerHTML = data.log.map(l => `<div class="log-line">${l}</div>`).join('');
+// ─── GOOGLE SHEETS ────────────────────────────────────────────────────────────
+async function syncFromSheet(){
+  if(!sheetsConfigured){toast('Configure Google Sheets in Settings first','err');return;}
+  toast('Syncing from Google Sheets…','info');
+  const r=await api('/api/sheets/sync_from',{method:'POST'});
+  if(r.ok){
+    toast(`Sheets sync: ${r.inserted} imported, ${r.updated} updated`,'info');
+    document.getElementById('sheetsBannerMsg').textContent=`${r.inserted} imported, ${r.updated} status updates from Google Sheets`;
+    document.getElementById('sheetsBanner').classList.remove('hidden');
+    loadJobs();loadStats();
+  } else {
+    toast(r.msg,'err');
   }
-  loadStats();
 }
 
-// ─── Settings ─────────────────────────────────────────────────
-async function loadSettings() {
-  const resp = await fetch('/api/settings');
-  const data = await resp.json();
-  document.getElementById('openai_key').placeholder = data.openai_key ? '(key saved — enter to update)' : 'sk-...';
-  document.getElementById('jsearch_key').placeholder = data.jsearch_key ? '(key saved — enter to update)' : 'Your RapidAPI key';
-  document.getElementById('auto_scrape').checked = data.auto_scrape === 'true';
-  document.getElementById('scrape_interval_hours').value = data.scrape_interval_hours || 24;
+async function syncToSheet(){
+  if(!sheetsConfigured){toast('Configure Google Sheets in Settings first','err');return;}
+  toast('Pushing to Google Sheets…','info');
+  const r=await api('/api/sheets/sync_to',{method:'POST',body:JSON.stringify({})});
+  if(r.ok){
+    toast(`Pushed ${r.pushed} updates, appended ${r.appended} new rows`,'info');
+  } else {
+    toast(r.msg,'err');
+  }
 }
 
-async function saveSettings() {
-  const payload = {
-    openai_key: document.getElementById('openai_key').value,
-    jsearch_key: document.getElementById('jsearch_key').value,
-    auto_scrape: document.getElementById('auto_scrape').checked ? 'true' : 'false',
-    scrape_interval_hours: document.getElementById('scrape_interval_hours').value,
+async function verifySheets(){
+  const btn=document.getElementById('verifyBtn');btn.disabled=true;btn.textContent='Testing…';
+  // Save sheet ID first
+  const sid=document.getElementById('sheets_id').value;
+  if(sid)await api('/api/settings',{method:'POST',body:JSON.stringify({sheets_id:sid})});
+  const r=await api('/api/sheets/verify',{method:'POST'});
+  btn.disabled=false;btn.textContent='Test Connection';
+  const dot=document.getElementById('settingsSheetsDot');
+  const stxt=document.getElementById('settingsSheetsStatus');
+  if(r.ok){
+    dot.classList.add('ok');stxt.textContent=r.msg;
+    toast(r.msg,'info');
+    loadStats();
+  } else {
+    dot.classList.remove('ok');stxt.textContent=r.msg;
+    toast(r.msg,'err');
+  }
+}
+
+async function uploadCreds(input){
+  if(!input.files[0])return;
+  const fd=new FormData();fd.append('file',input.files[0]);
+  const r=await fetch('/api/sheets/upload_creds',{method:'POST',body:fd}).then(r=>r.json());
+  if(r.ok){
+    toast('Credentials uploaded!','info');
+    document.getElementById('credsZoneContent').innerHTML=`<div style="font-size:11px;color:var(--sheets);font-weight:600">✓ Credentials loaded</div>`;
+    document.getElementById('serviceAccountEmail').textContent=`Service account: ${r.service_account_email}`;
+    document.getElementById('credsUploadZone').style.borderColor='var(--sheets)';
+  } else toast(r.msg,'err');
+}
+
+async function loadSheetsSyncHistory(){
+  const rows=await api('/api/sheets/log');
+  const el=document.getElementById('sheetsSyncHistory');
+  if(!rows.length){el.innerHTML='';return;}
+  el.innerHTML='<div style="font-size:10px;font-weight:600;font-family:\'Syne\',sans-serif;color:var(--text);margin:10px 0 5px">Recent Syncs</div>'+
+    rows.slice(0,5).map(r=>
+      `<div class="sheets-history-item">
+        <span style="color:var(--sheets)">${r.direction==='from_sheet'?'↓ Pull':'↑ Push'}</span>
+        <span>${r.synced_at?new Date(r.synced_at).toLocaleString():''}</span>
+        <span>${r.direction==='from_sheet'?`${r.inserted||0} imported, ${r.updated||0} updated`:`${r.pushed||0} pushed, ${r.appended||0} appended`}</span>
+      </div>`
+    ).join('');
+}
+
+async function loadSheetsSyncLog(){
+  const rows=await api('/api/sheets/log');
+  const el=document.getElementById('sheetsSyncLog');
+  el.innerHTML=rows.map(r=>`<div class="log-entry">
+    <div class="log-entry-head">
+      <span style="color:var(--sheets)">${r.direction==='from_sheet'?'↓ Pull':'↑ Push'}</span>
+      <span style="color:var(--muted)">${r.synced_at?new Date(r.synced_at).toLocaleString():''}</span>
+    </div>
+    <span style="color:var(--muted)">${r.direction==='from_sheet'?`${r.inserted||0} imported · ${r.updated||0} updated`:`${r.pushed||0} pushed · ${r.appended||0} appended · ${r.errors||0} errors`}</span>
+  </div>`).join('')||'<div style="color:var(--muted);font-size:11px">No sync history yet.</div>';
+}
+
+// ─── AI ADVISOR ───────────────────────────────────────────────────────────────
+async function runAdvisor(){
+  if(!currentUser.has_resume){toast('Upload resume in My Profile first','err');return;}
+  const btn=document.getElementById('advisorBtn');
+  btn.disabled=true;btn.innerHTML='<span class="spinner"></span> Thinking…';
+  document.getElementById('advisorResults').style.display='none';
+  const r=await api('/api/ai/recommend',{method:'POST',body:JSON.stringify({context:document.getElementById('advisorContext').value})});
+  btn.disabled=false;btn.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg> Get Recommendations';
+  if(!r.ok){toast(r.msg,'err');return;}
+  const res=r.result;
+  if(res.raw){
+    document.getElementById('advisorResultsGrid').innerHTML=`<div class="advisor-card full"><h4>AI Response</h4><p style="font-size:12px;color:var(--muted);white-space:pre-wrap">${esc(res.raw)}</p></div>`;
+  } else {
+    let html='';
+    if(res.job_titles)html+=`<div class="advisor-card"><h4>🎯 Recommended Titles</h4><div>${res.job_titles.map(t=>`<div class="advisor-chip">${esc(t)}</div>`).join('')}</div></div>`;
+    if(res.keywords)html+=`<div class="advisor-card"><h4>🔍 Keywords</h4><div>${res.keywords.map(k=>`<div class="advisor-chip">${esc(k)}</div>`).join('')}</div></div>`;
+    if(res.companies)html+=`<div class="advisor-card"><h4>🏢 Target Companies</h4><div>${res.companies.map(c=>`<div class="advisor-list-item"><strong>${esc(c.name)}</strong><span>${esc(c.why)}</span></div>`).join('')}</div></div>`;
+    if(res.job_boards)html+=`<div class="advisor-card"><h4>📋 Job Boards</h4><div>${res.job_boards.map(b=>`<div class="advisor-list-item"><strong>${esc(b.name)}</strong><a href="${esc(b.url)}" target="_blank" onclick="event.stopPropagation()">${esc(b.url)}</a><span>${esc(b.why)}</span></div>`).join('')}</div></div>`;
+    if(res.advice)html+=`<div class="advisor-card full"><h4>💡 Career Advice</h4><div class="advisor-advice">${esc(res.advice)}</div></div>`;
+    document.getElementById('advisorResultsGrid').innerHTML=html;
+  }
+  document.getElementById('advisorResults').style.display='block';
+}
+
+// ─── RESUME ───────────────────────────────────────────────────────────────────
+async function uploadResume(input){
+  if(!input.files[0])return;
+  const fd=new FormData();fd.append('file',input.files[0]);
+  const r=await fetch('/api/resume/upload',{method:'POST',body:fd}).then(r=>r.json());
+  if(r.ok){
+    toast('Resume uploaded!');currentUser.has_resume=true;currentUser.resume_filename=r.filename;
+    document.getElementById('resumeBox').classList.add('has-resume');
+    document.getElementById('resumeBoxContent').innerHTML=`<h4>✓ ${esc(r.filename)}</h4><p>Click to replace</p>`;
+    document.getElementById('resumePreview').textContent=r.preview+'…';
+    document.getElementById('resumePreviewWrap').style.display='block';
+  } else toast(r.msg,'err');
+}
+async function saveContext(){
+  const ctx=document.getElementById('profileContext').value;
+  await api('/api/resume/context',{method:'POST',body:JSON.stringify({context:ctx})});
+  toast('Context saved!');
+}
+
+// ─── LOCATIONS ────────────────────────────────────────────────────────────────
+async function loadLocations(){
+  const locs=await api('/api/locations');
+  document.getElementById('locList').innerHTML=locs.map(l=>`
+    <div class="loc-item">
+      <span class="loc-label">${esc(l.label)}</span>
+      <span class="loc-radius">${l.radius_miles}mi</span>
+      <button class="loc-toggle ${l.active?'on':'off'}" onclick="toggleLoc(${l.id})">${l.active?'ON':'OFF'}</button>
+      <button class="loc-del" onclick="deleteLoc(${l.id})">×</button>
+    </div>`).join('');
+}
+async function addLocation(){
+  const city=document.getElementById('locCity').value.trim();
+  if(!city){toast('Enter a city','err');return;}
+  await api('/api/locations',{method:'POST',body:JSON.stringify({city,state:document.getElementById('locState').value||'IN',radius_miles:document.getElementById('locRadius').value||30})});
+  document.getElementById('locCity').value='';loadLocations();toast('Location added!');
+}
+async function toggleLoc(id){await api(`/api/locations/${id}/toggle`,{method:'POST'});loadLocations();}
+async function deleteLoc(id){await api(`/api/locations/${id}`,{method:'DELETE'});loadLocations();}
+
+// ─── SETTINGS ─────────────────────────────────────────────────────────────────
+async function loadSettings(){
+  const s=await api('/api/settings');
+  document.getElementById('usajobs_key').placeholder=s.usajobs_key?'(set — enter to update)':'Enter key…';
+  document.getElementById('usajobs_email').value=s.usajobs_email||'';
+  document.getElementById('jsearch_key').placeholder=s.jsearch_key?'(set — enter to update)':'Enter key…';
+  document.getElementById('purdue_api_key').placeholder=s.purdue_api_key?'(set — enter to update)':'Enter key…';
+  document.getElementById('purdue_api_model').value=s.purdue_api_model||'gpt-oss:120b';
+  document.getElementById('purdue_api_url').value=s.purdue_api_url||'https://genai.rcac.purdue.edu/api/chat/completions';
+  document.getElementById('jsearch_monthly_limit').value=s.jsearch_monthly_limit||200;
+  document.getElementById('adzuna_daily_limit').value=s.adzuna_daily_limit||250;
+  document.getElementById('sheets_id').value=s.sheets_id||'';
+  document.getElementById('sheets_auto_sync').checked=s.sheets_auto_sync==='1';
+  // Sheets status
+  const dot=document.getElementById('settingsSheetsDot');
+  const stxt=document.getElementById('settingsSheetsStatus');
+  if(s.creds_exists&&s.sheets_id){
+    dot.classList.add('ok');stxt.textContent=`Connected${s.service_account_email?' — '+s.service_account_email:''}`;
+  } else if(s.creds_exists){
+    dot.classList.remove('ok');stxt.textContent='Credentials loaded — add Sheet ID to finish';
+  } else {
+    dot.classList.remove('ok');stxt.textContent='Not configured — follow setup instructions below';
+  }
+  if(s.creds_exists){
+    document.getElementById('credsZoneContent').innerHTML=`<div style="font-size:11px;color:var(--sheets);font-weight:600">✓ Credentials loaded</div>`;
+    document.getElementById('credsUploadZone').style.borderColor='var(--sheets)';
+    if(s.service_account_email)document.getElementById('serviceAccountEmail').textContent=`Service account: ${s.service_account_email}`;
+  }
+}
+async function saveSettings(){
+  const payload={
+    usajobs_key:document.getElementById('usajobs_key').value,
+    usajobs_email:document.getElementById('usajobs_email').value,
+    jsearch_key:document.getElementById('jsearch_key').value,
+    purdue_api_key:document.getElementById('purdue_api_key').value,
+    purdue_api_model:document.getElementById('purdue_api_model').value,
+    purdue_api_url:document.getElementById('purdue_api_url').value,
+    jsearch_monthly_limit:document.getElementById('jsearch_monthly_limit').value,
+    sheets_id:document.getElementById('sheets_id').value,
+    sheets_auto_sync:document.getElementById('sheets_auto_sync').checked?'1':'0',
   };
-  await fetch('/api/settings', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
-  // Clear sensitive fields
-  document.getElementById('openai_key').value = '';
-  document.getElementById('jsearch_key').value = '';
-  alert('Settings saved!');
-  loadSettings();
+  await api('/api/settings',{method:'POST',body:JSON.stringify(payload)});
+  ['usajobs_key','jsearch_key','purdue_api_key'].forEach(id=>{document.getElementById(id).value='';});
+  toast('Settings saved!');loadSettings();
 }
 
-// ─── Init ──────────────────────────────────────────────────────
-loadJobs();
+// ─── LOG ──────────────────────────────────────────────────────────────────────
+async function loadLog(){
+  const d=await api('/api/scrape/status');
+  const lc=document.getElementById('logContainer');
+  if(d.log&&d.log.length)lc.innerHTML=d.log.map(l=>`<div class="log-line">${esc(l)}</div>`).join('');
+  else lc.innerHTML='<div style="color:var(--muted)">No active scrape log.</div>';
+  const hist=await api('/api/scrape/log');
+  document.getElementById('logHistory').innerHTML=hist.map(e=>`<div class="log-entry">
+    <div class="log-entry-head">
+      <span class="${e.status==='success'?'log-ok':'log-err'}">${e.status==='success'?'✓':'✗'} ${e.status}</span>
+      <span style="color:var(--muted)">${e.started_at?new Date(e.started_at).toLocaleString():''}</span>
+    </div>
+    <span style="color:var(--muted)">${e.jobs_found||0} jobs · ${e.adzuna_calls||0} Adzuna · ${e.jsearch_calls||0} JSearch · ${e.ai_calls||0} AI calls</span>
+  </div>`).join('')||'<div style="color:var(--muted);font-size:11px">No history yet.</div>';
+}
+
+checkLogin();
 </script>
 </body>
 </html>

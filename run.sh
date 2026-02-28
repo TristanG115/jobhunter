@@ -3,19 +3,19 @@
 
 echo "🔧 Setting up JobHunter..."
 
-# Create virtual environment if needed
 if [ ! -d "venv" ]; then
     python3 -m venv venv
     echo "✓ Virtual environment created"
 fi
 
-# Activate and install
 source venv/bin/activate
 pip install -r requirements.txt --quiet
 echo "✓ Dependencies installed"
 
-# Initialize database
-python3 -c "import app; app.init_db()" 2>/dev/null || true
+mkdir -p data uploads
+
+# Initialize / migrate database
+python3 -c "import app; app.init_db()"
 echo "✓ Database initialized"
 
 echo ""
